@@ -1,10 +1,10 @@
-# Jenkinsfile Studio
+# Jenkinsfile Free
 
 Free Jenkinsfile editing support for GoLand and IntelliJ-based IDEs. This plugin is MIT licensed, runs locally, and has no paid plugin or server requirement.
 
 ## Features
 
-- Recognizes `Jenkinsfile`, files whose names start with `Jenkinsfile` (such as `Jenkinsfile_Production`), and files ending in `.jenkinsfile`.
+- Recognizes every filename containing `jenkinsfile`, case-insensitively and regardless of extension: for example, `Jenkinsfile`, `deploy.JENKINSFILE.prod`, `my-jEnKiNsFiLe.groovy`, and `release_jenkinsfile_backup`.
 - Highlights Groovy syntax, Jenkins Declarative Pipeline keywords, method calls, named argument field keys (such as `name`, `choices`, and `description`), constants, comments, strings, operators, and paired braces.
 - Reports Groovy grammar syntax errors while editing.
 - Provides context-aware completion for Declarative Pipeline sections and conditions, common built-in steps, globals, and other frequently used DSL entries.
@@ -32,11 +32,11 @@ The plugin and its source are free. JetBrains IDE licensing is separate.
 
 ## JetBrains Marketplace
 
-Marketplace listing: [Jenkinsfile Studio](https://plugins.jetbrains.com/plugin/35027-jenkinsfile-studio).
+Marketplace listing: [Jenkinsfile Free](https://plugins.jetbrains.com/plugin/35027-jenkinsfile-studio).
 
-Version **1.0.2** was submitted on **12 October 2026** on the Stable channel with the MIT license and public visibility (the Hidden flag is off). The current submission status is **Under review**. The listing will become publicly available and searchable after JetBrains approves it; submission alone does not mean approval. Until then, use the GitHub release ZIP above.
+Version **1.0.3** was submitted on **12 October 2026** on the Stable channel with the MIT license and public visibility (the Hidden flag is off). It requests the new name **Jenkinsfile Free** and adds case-insensitive filename matching. The current submission status is **Under review**; the Marketplace title still shows the previous name, Jenkinsfile Studio, while approval is pending. The listing will become publicly available and searchable after JetBrains approves it; submission alone does not mean approval. Until then, use the GitHub release ZIP above.
 
-The Marketplace plugin ID is `35027`, the plugin XML ID is `com.neko233.jenkinsfile`, and the submitted update ID is `1192184`.
+The Marketplace plugin ID is `35027`, the plugin XML ID is `com.neko233.jenkinsfile`, and the submitted update ID is `1192206`. The plugin ID remains the same across the rename so existing installations can receive updates.
 
 ## Build from source
 
