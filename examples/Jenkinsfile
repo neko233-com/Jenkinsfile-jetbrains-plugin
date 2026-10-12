@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        timeout(time: 20, unit: 'MINUTES')
+    }
+
+    environment {
+        BUILD_MODE = 'release'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'go build ./...'
+            }
+        }
+        stage('Test') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh 'go test ./...'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Build finished with ${currentBuild.currentResult}"
+        }
+    }
+}
