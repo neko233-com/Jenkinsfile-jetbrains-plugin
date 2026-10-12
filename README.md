@@ -4,11 +4,11 @@ Free Jenkinsfile editing support for GoLand and IntelliJ-based IDEs. This plugin
 
 ## Features
 
-- Recognizes files named `Jenkinsfile` and files ending in `.jenkinsfile`.
-- Highlights Groovy syntax and common Jenkins Declarative Pipeline keywords, comments, strings, operators, and paired braces.
+- Recognizes `Jenkinsfile`, files whose names start with `Jenkinsfile` (such as `Jenkinsfile_Production`), and files ending in `.jenkinsfile`.
+- Highlights Groovy syntax, Jenkins Declarative Pipeline keywords, method calls, named arguments, constants, comments, strings, operators, and paired braces.
 - Reports Groovy grammar syntax errors while editing.
 - Provides context-aware completion for Declarative Pipeline sections and conditions, common built-in steps, globals, and other frequently used DSL entries.
-- Formats blocks and expressions through the IDE's **Reformat Code** action (`Ctrl+Alt+L` on Windows/Linux).
+- Formats blocks and expressions through the IDE's **Reformat Code** action (`Ctrl+Alt+L`) or the Jenkinsfile-only `Ctrl+Shift+L` shortcut on the default keymap.
 - Imports Jenkins Pipeline method and global names from a controller-generated IntelliJ GDSL file.
 
 The plugin supplies its own Jenkinsfile language support, so GoLand does not need a separate Groovy plugin. It bundles Apache Groovy's parser to check Groovy grammar.

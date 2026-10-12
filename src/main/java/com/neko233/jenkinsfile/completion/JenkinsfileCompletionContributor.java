@@ -191,7 +191,8 @@ public final class JenkinsfileCompletionContributor extends CompletionContributo
             } else if (type == RIGHT_BRACE) {
                 if (!blocks.isEmpty()) blocks.pop();
                 previousWord = "";
-            } else if (type == IDENTIFIER || type == KEYWORD || type == PIPELINE_KEYWORD) {
+            } else if (type == IDENTIFIER || type == METHOD_CALL || type == NAMED_ARGUMENT || type == CONSTANT
+                    || type == KEYWORD || type == PIPELINE_KEYWORD) {
                 previousWord = text.substring(lexer.getTokenStart(), lexer.getTokenEnd());
             } else if (type == SEMICOLON) {
                 previousWord = "";

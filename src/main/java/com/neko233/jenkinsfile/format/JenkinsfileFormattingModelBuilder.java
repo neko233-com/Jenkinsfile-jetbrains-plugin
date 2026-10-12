@@ -70,7 +70,8 @@ public final class JenkinsfileFormattingModelBuilder implements FormattingModelB
             if (after == CURLY_GROUP) return spacing(1, 0);
             if (after == PAREN_GROUP) return spacing(isGroovyControlKeyword(beforeText) ? 1 : 0, 0);
             if (after == BRACKET_GROUP) {
-                return spacing(before == IDENTIFIER || before == PAREN_GROUP || before == BRACKET_GROUP ? 0 : 1, 0);
+                return spacing(before == IDENTIFIER || before == METHOD_CALL || before == NAMED_ARGUMENT
+                        || before == CONSTANT || before == PAREN_GROUP || before == BRACKET_GROUP ? 0 : 1, 0);
             }
             if (before == PAREN_GROUP || before == BRACKET_GROUP) {
                 return spacing(after == DOT || after == BRACKET_GROUP || after == PAREN_GROUP ? 0 : 1, 0);

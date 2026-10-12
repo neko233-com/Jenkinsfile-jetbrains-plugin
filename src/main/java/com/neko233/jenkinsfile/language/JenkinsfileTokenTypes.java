@@ -8,6 +8,9 @@ import org.jetbrains.annotations.NotNull;
 public final class JenkinsfileTokenTypes {
     public static final IElementType WHITE_SPACE = type("WHITE_SPACE");
     public static final IElementType IDENTIFIER = type("IDENTIFIER");
+    public static final IElementType METHOD_CALL = type("METHOD_CALL");
+    public static final IElementType NAMED_ARGUMENT = type("NAMED_ARGUMENT");
+    public static final IElementType CONSTANT = type("CONSTANT");
     public static final IElementType KEYWORD = type("KEYWORD");
     public static final IElementType PIPELINE_KEYWORD = type("PIPELINE_KEYWORD");
     public static final IElementType NUMBER = type("NUMBER");

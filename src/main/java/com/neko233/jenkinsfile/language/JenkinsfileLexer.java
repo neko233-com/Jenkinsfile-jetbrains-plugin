@@ -28,6 +28,17 @@ public final class JenkinsfileLexer extends LexerBase {
             "beforeAgent", "beforeInput", "beforeOptions", "buildingTag", "changelog", "changeset",
             "changeRequest", "tag", "triggeredBy", "credentials"
     );
+    private static final Set<String> PIPELINE_STEPS = Set.of(
+            "addBadge", "archive", "archiveArtifacts", "bat", "booleanParam", "build", "catchError",
+            "checkout", "choice", "cleanWs", "configFileProvider", "credentials", "deleteDir", "dir",
+            "disableConcurrentBuilds", "dockerNode", "echo", "error", "fileExists", "findFiles", "git",
+            "httpRequest", "input", "isUnix", "jdk", "junit", "library", "libraryResource", "load",
+            "lock", "mail", "maven", "milestone", "password", "pollSCM", "powershell", "properties",
+            "pwd", "pwsh", "readFile", "readJSON", "readTrusted", "readYaml", "retry", "sh", "sleep",
+            "sshagent", "stash", "step", "string", "text", "timestamps", "timeout", "tool", "unarchive",
+            "unstable", "unstash", "upstream", "waitUntil", "warnError", "withContext", "withCredentials",
+            "withEnv", "wrap", "ws", "writeFile", "zip", "unzip"
+    );
     private static final String[] OPERATORS = {
             "<=>", "==~", "<..<", "<<=", ">>=", "**=", "==", "!=", "<=", ">=", "..<", "..", "?.", "*.",
             ".&", "::", "->", "++", "--", ">>>", "<<", ">>",
@@ -124,8 +135,19 @@ public final class JenkinsfileLexer extends LexerBase {
                 tokenEnd++;
             }
             String word = buffer.subSequence(tokenStart, tokenEnd).toString();
-            tokenType = PIPELINE_KEYWORDS.contains(word) ? PIPELINE_KEYWORD
-                    : GROOVY_KEYWORDS.contains(word) ? KEYWORD : IDENTIFIER;
+            if (GROOVY_KEYWORDS.contains(word)) {
+                tokenType = KEYWORD;
+            } else if (isNamedArgument(tokenEnd)) {
+                tokenType = NAMED_ARGUMENT;
+            } else if (PIPELINE_KEYWORDS.contains(word)) {
+                tokenType = PIPELINE_KEYWORD;
+            } else if (isConstant(word)) {
+                tokenType = CONSTANT;
+            } else if (isMethodCall(word, tokenEnd)) {
+                tokenType = METHOD_CALL;
+            } else {
+                tokenType = IDENTIFIER;
+            }
             return;
         }
         if (Character.isDigit(c)) {
@@ -257,6 +279,39 @@ public final class JenkinsfileLexer extends LexerBase {
             }
         }
         return start + 1;
+    }
+
+    private boolean isNamedArgument(int end) {
+        int next = skipWhitespace(end);
+        return next < bufferEnd && buffer.charAt(next) == ':';
+    }
+
+    private boolean isMethodCall(String word, int end) {
+        int next = skipWhitespace(end);
+        if (next >= bufferEnd) return false;
+        if (buffer.charAt(next) == '(') return true;
+        return PIPELINE_STEPS.contains(word) && buffer.charAt(next) != ':'
+                && buffer.charAt(next) != ',' && buffer.charAt(next) != ')' && buffer.charAt(next) != '}';
+    }
+
+    private int skipWhitespace(int offset) {
+        int i = offset;
+        while (i < bufferEnd && Character.isWhitespace(buffer.charAt(i))) i++;
+        return i;
+    }
+
+    private static boolean isConstant(String word) {
+        boolean hasLetter = false;
+        for (int i = 0; i < word.length(); i++) {
+            char c = word.charAt(i);
+            if (Character.isLetter(c)) {
+                hasLetter = true;
+                if (!Character.isUpperCase(c)) return false;
+            } else if (!Character.isDigit(c) && c != '_' && c != '$') {
+                return false;
+            }
+        }
+        return hasLetter;
     }
 
     private boolean isRegexStart(int offset) {

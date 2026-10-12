@@ -20,6 +20,9 @@ public final class JenkinsfileSyntaxHighlighterFactory extends SyntaxHighlighter
     private static final TextAttributesKey[] NUMBER_ATTRS = keys("JENKINSFILE_NUMBER", DefaultLanguageHighlighterColors.NUMBER);
     private static final TextAttributesKey[] OPERATOR_ATTRS = keys("JENKINSFILE_OPERATOR", DefaultLanguageHighlighterColors.OPERATION_SIGN);
     private static final TextAttributesKey[] IDENTIFIER_ATTRS = keys("JENKINSFILE_IDENTIFIER", DefaultLanguageHighlighterColors.IDENTIFIER);
+    private static final TextAttributesKey[] METHOD_CALL_ATTRS = keys("JENKINSFILE_METHOD_CALL", DefaultLanguageHighlighterColors.FUNCTION_CALL);
+    private static final TextAttributesKey[] NAMED_ARGUMENT_ATTRS = keys("JENKINSFILE_NAMED_ARGUMENT", DefaultLanguageHighlighterColors.PARAMETER);
+    private static final TextAttributesKey[] CONSTANT_ATTRS = keys("JENKINSFILE_CONSTANT", DefaultLanguageHighlighterColors.CONSTANT);
     private static final TextAttributesKey[] PUNCTUATION_ATTRS = keys("JENKINSFILE_PUNCTUATION", DefaultLanguageHighlighterColors.COMMA);
     private static final TextAttributesKey[] BRACES_ATTRS = keys("JENKINSFILE_BRACES", DefaultLanguageHighlighterColors.BRACES);
     private static final TextAttributesKey[] BAD_ATTRS = keys("JENKINSFILE_BAD_CHARACTER", DefaultLanguageHighlighterColors.INVALID_STRING_ESCAPE);
@@ -39,6 +42,9 @@ public final class JenkinsfileSyntaxHighlighterFactory extends SyntaxHighlighter
                 if (tokenType == LINE_COMMENT || tokenType == BLOCK_COMMENT) return COMMENT_ATTRS;
                 if (tokenType == NUMBER) return NUMBER_ATTRS;
                 if (tokenType == OPERATOR || tokenType == AT) return OPERATOR_ATTRS;
+                if (tokenType == METHOD_CALL) return METHOD_CALL_ATTRS;
+                if (tokenType == NAMED_ARGUMENT) return NAMED_ARGUMENT_ATTRS;
+                if (tokenType == CONSTANT) return CONSTANT_ATTRS;
                 if (tokenType == IDENTIFIER) return IDENTIFIER_ATTRS;
                 if (tokenType == LEFT_BRACE || tokenType == RIGHT_BRACE || tokenType == LEFT_PAREN
                         || tokenType == RIGHT_PAREN || tokenType == LEFT_BRACKET || tokenType == RIGHT_BRACKET) return BRACES_ATTRS;
