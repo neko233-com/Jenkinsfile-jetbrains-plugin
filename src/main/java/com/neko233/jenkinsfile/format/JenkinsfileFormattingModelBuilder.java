@@ -62,44 +62,7 @@ public final class JenkinsfileFormattingModelBuilder implements FormattingModelB
             if (child1 == null || !(child1 instanceof JenkinsfileBlock left)
                     || !(child2 instanceof JenkinsfileBlock right)) return null;
 
-            IElementType before = left.myNode.getElementType();
-            IElementType after = right.myNode.getElementType();
-            String beforeText = left.myNode.getText();
-            String afterText = right.myNode.getText();
-
-            if (after == CURLY_GROUP) return spacing(1, 0);
-            if (after == PAREN_GROUP) return spacing(isGroovyControlKeyword(beforeText) ? 1 : 0, 0);
-            if (after == BRACKET_GROUP) {
-                return spacing(before == IDENTIFIER || before == METHOD_CALL || before == NAMED_ARGUMENT
-                        || before == CONSTANT || before == PAREN_GROUP || before == BRACKET_GROUP ? 0 : 1, 0);
-            }
-            if (before == PAREN_GROUP || before == BRACKET_GROUP) {
-                return spacing(after == DOT || after == BRACKET_GROUP || after == PAREN_GROUP ? 0 : 1, 0);
-            }
-            if (before == CURLY_GROUP) return spacing(1, 0);
-            if (before == LINE_COMMENT) return spacing(0, 1);
-            if (after == LINE_COMMENT || after == BLOCK_COMMENT) return spacing(1, 0);
-            if (before == LEFT_BRACE) return spacing(0, 1);
-            if (after == RIGHT_BRACE) return spacing(0, before == LEFT_BRACE ? 0 : 1);
-            if (before == SEMICOLON) return spacing(0, 1);
-            if (after == COMMA || after == COLON || after == SEMICOLON) return spacing(0, 0);
-            if (before == COMMA || before == COLON) return spacing(1, 0);
-            if (before == DOT || after == DOT) return spacing(0, 0);
-            if (after == LEFT_PAREN) {
-                return spacing(isGroovyControlKeyword(beforeText) ? 1 : 0, 0);
-            }
-            if (after == RIGHT_PAREN || after == RIGHT_BRACKET || before == LEFT_PAREN || before == LEFT_BRACKET) {
-                return spacing(0, 0);
-            }
-            if (after == LEFT_BRACE) return spacing(1, 0);
-            if (before == OPERATOR || after == OPERATOR) return spacing(1, 0);
-            if (before == AT || after == AT) return spacing(0, 0);
-            if (before == BLOCK_COMMENT) return spacing(1, 0);
-            return spacing(1, 0);
-        }
-
-        private static Spacing spacing(int spaces, int lineFeeds) {
-            return Spacing.createSpacing(spaces, spaces, lineFeeds, true, 2);
+            return SpacingRules.between(left.myNode, right.myNode);
         }
 
         @Override
@@ -151,6 +114,94 @@ public final class JenkinsfileFormattingModelBuilder implements FormattingModelB
         @Override
         public @NotNull TextRange getTextRange() {
             return myNode.getTextRange();
+        }
+
+    }
+
+    /**
+     * Canonicalizes spaces and indentation while retaining existing statement boundaries.
+     * Keeping line breaks lets the formatter handle Groovy's newline-separated DSL safely;
+     * each pass only rewrites whitespace, so a second pass reaches the same text.
+     */
+    private static final class SpacingRules {
+        private SpacingRules() {
+        }
+
+        private static Spacing between(ASTNode left, ASTNode right) {
+            IElementType before = left.getElementType();
+            IElementType after = right.getElementType();
+            String beforeText = left.getText();
+
+            Spacing spacing = spacingAroundGroups(before, after, beforeText);
+            if (spacing != null) return spacing;
+
+            spacing = spacingAroundComments(before, after);
+            if (spacing != null) return spacing;
+
+            spacing = spacingAroundBraces(before, after);
+            if (spacing != null) return spacing;
+
+            spacing = spacingAroundPunctuation(before, after);
+            if (spacing != null) return spacing;
+
+            spacing = spacingAroundExpressions(before, after, beforeText);
+            return spacing != null ? spacing : spaces(1);
+        }
+
+        private static Spacing spacingAroundGroups(IElementType before, IElementType after, String beforeText) {
+            if (after == CURLY_GROUP) return spaces(1);
+            if (after == PAREN_GROUP) return spaces(isGroovyControlKeyword(beforeText) ? 1 : 0);
+            if (after == BRACKET_GROUP) {
+                boolean attached = before == IDENTIFIER || before == METHOD_CALL || before == NAMED_ARGUMENT
+                        || before == CONSTANT || before == PAREN_GROUP || before == BRACKET_GROUP;
+                return spaces(attached ? 0 : 1);
+            }
+            if (before == PAREN_GROUP || before == BRACKET_GROUP) {
+                boolean attached = after == DOT || after == BRACKET_GROUP || after == PAREN_GROUP;
+                return spaces(attached ? 0 : 1);
+            }
+            if (before == CURLY_GROUP) return spaces(1);
+            return null;
+        }
+
+        private static Spacing spacingAroundComments(IElementType before, IElementType after) {
+            if (before == LINE_COMMENT) return lineBreak();
+            if (after == LINE_COMMENT || after == BLOCK_COMMENT) return spaces(1);
+            if (before == BLOCK_COMMENT) return spaces(1);
+            return null;
+        }
+
+        private static Spacing spacingAroundBraces(IElementType before, IElementType after) {
+            if (after == RIGHT_BRACE) return before == LEFT_BRACE ? spaces(0) : lineBreak();
+            if (before == LEFT_BRACE) return lineBreak();
+            if (after == LEFT_BRACE) return spaces(1);
+            return null;
+        }
+
+        private static Spacing spacingAroundPunctuation(IElementType before, IElementType after) {
+            if (before == SEMICOLON) return lineBreak();
+            if (after == COMMA || after == COLON || after == SEMICOLON) return spaces(0);
+            if (before == COMMA || before == COLON) return spaces(1);
+            if (before == DOT || after == DOT) return spaces(0);
+            return null;
+        }
+
+        private static Spacing spacingAroundExpressions(IElementType before, IElementType after, String beforeText) {
+            if (after == LEFT_PAREN) return spaces(isGroovyControlKeyword(beforeText) ? 1 : 0);
+            if (after == RIGHT_PAREN || after == RIGHT_BRACKET || before == LEFT_PAREN || before == LEFT_BRACKET) {
+                return spaces(0);
+            }
+            if (before == OPERATOR || after == OPERATOR) return spaces(1);
+            if (before == AT || after == AT) return spaces(0);
+            return null;
+        }
+
+        private static Spacing spaces(int count) {
+            return Spacing.createSpacing(count, count, 0, true, 2);
+        }
+
+        private static Spacing lineBreak() {
+            return Spacing.createSpacing(0, 0, 1, true, 2);
         }
 
         private static boolean isGroovyControlKeyword(String text) {

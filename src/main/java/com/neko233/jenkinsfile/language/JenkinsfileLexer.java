@@ -135,10 +135,10 @@ public final class JenkinsfileLexer extends LexerBase {
                 tokenEnd++;
             }
             String word = buffer.subSequence(tokenStart, tokenEnd).toString();
-            if (GROOVY_KEYWORDS.contains(word)) {
-                tokenType = KEYWORD;
-            } else if (isNamedArgument(tokenEnd)) {
+            if (isNamedArgument(tokenEnd)) {
                 tokenType = NAMED_ARGUMENT;
+            } else if (GROOVY_KEYWORDS.contains(word)) {
+                tokenType = KEYWORD;
             } else if (PIPELINE_KEYWORDS.contains(word)) {
                 tokenType = PIPELINE_KEYWORD;
             } else if (isConstant(word)) {

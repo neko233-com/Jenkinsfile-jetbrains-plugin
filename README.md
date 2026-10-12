@@ -1,14 +1,15 @@
-# Jenkinsfile
+# Jenkinsfile Studio
 
 Free Jenkinsfile editing support for GoLand and IntelliJ-based IDEs. This plugin is MIT licensed, runs locally, and has no paid plugin or server requirement.
 
 ## Features
 
 - Recognizes `Jenkinsfile`, files whose names start with `Jenkinsfile` (such as `Jenkinsfile_Production`), and files ending in `.jenkinsfile`.
-- Highlights Groovy syntax, Jenkins Declarative Pipeline keywords, method calls, named arguments, constants, comments, strings, operators, and paired braces.
+- Highlights Groovy syntax, Jenkins Declarative Pipeline keywords, method calls, named argument field keys (such as `name`, `choices`, and `description`), constants, comments, strings, operators, and paired braces.
 - Reports Groovy grammar syntax errors while editing.
 - Provides context-aware completion for Declarative Pipeline sections and conditions, common built-in steps, globals, and other frequently used DSL entries.
-- Formats blocks and expressions through the IDE's **Reformat Code** action (`Ctrl+Alt+L`) or the Jenkinsfile-only `Ctrl+Shift+L` shortcut on the default keymap.
+- Shows pipeline blocks such as `pipeline`, `stages`, `stage`, `steps`, `post`, and `when` in the IDE Structure view for quick navigation.
+- Formats blocks and expressions through the IDE's **Reformat Code** action (`Ctrl+Alt+L`) or the Jenkinsfile-only `Ctrl+Shift+L` shortcut on the default keymap. Formatting keeps statement line breaks and canonicalizes spaces and indentation, so running it again leaves the file unchanged.
 - Imports Jenkins Pipeline method and global names from a controller-generated IntelliJ GDSL file.
 
 The plugin supplies its own Jenkinsfile language support, so GoLand does not need a separate Groovy plugin. It bundles Apache Groovy's parser to check Groovy grammar.
@@ -41,6 +42,6 @@ The plugin archive is written to `build/distributions/`. Run `verifyPlugin` to c
 
 ## Compatibility
 
-The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. The 1.0.0 release was built and checked with GoLand 2026.2.1.1. IntelliJ IDEA uses the same platform APIs, but the IDEA product verifier was not run for this release.
+The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. Source compilation was checked against GoLand 2026.2.1.1. The Marketplace Plugin Verifier could not run in this environment because the local JBR fails to establish its loopback connection; IntelliJ IDEA compatibility has not been independently verified for this release.
 
 The plugin makes no network calls and does not upload source files. GDSL import reads a local file. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the bundled parser license.

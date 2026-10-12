@@ -21,7 +21,8 @@ public final class JenkinsfileSyntaxHighlighterFactory extends SyntaxHighlighter
     private static final TextAttributesKey[] OPERATOR_ATTRS = keys("JENKINSFILE_OPERATOR", DefaultLanguageHighlighterColors.OPERATION_SIGN);
     private static final TextAttributesKey[] IDENTIFIER_ATTRS = keys("JENKINSFILE_IDENTIFIER", DefaultLanguageHighlighterColors.IDENTIFIER);
     private static final TextAttributesKey[] METHOD_CALL_ATTRS = keys("JENKINSFILE_METHOD_CALL", DefaultLanguageHighlighterColors.FUNCTION_CALL);
-    private static final TextAttributesKey[] NAMED_ARGUMENT_ATTRS = keys("JENKINSFILE_NAMED_ARGUMENT", DefaultLanguageHighlighterColors.PARAMETER);
+    // Field keys such as name/choices/description should stand apart from step names and values.
+    private static final TextAttributesKey[] NAMED_ARGUMENT_ATTRS = keys("JENKINSFILE_NAMED_ARGUMENT", DefaultLanguageHighlighterColors.METADATA);
     private static final TextAttributesKey[] CONSTANT_ATTRS = keys("JENKINSFILE_CONSTANT", DefaultLanguageHighlighterColors.CONSTANT);
     private static final TextAttributesKey[] PUNCTUATION_ATTRS = keys("JENKINSFILE_PUNCTUATION", DefaultLanguageHighlighterColors.COMMA);
     private static final TextAttributesKey[] BRACES_ATTRS = keys("JENKINSFILE_BRACES", DefaultLanguageHighlighterColors.BRACES);

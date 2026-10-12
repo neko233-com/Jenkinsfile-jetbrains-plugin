@@ -1,11 +1,15 @@
 <idea-plugin>
     <id>com.neko233.jenkinsfile</id>
-    <name>Jenkinsfile</name>
+    <name>Jenkinsfile Studio</name>
     <vendor url="https://github.com/neko233-com">neko233-com</vendor>
+    <url>https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin</url>
     <description><![CDATA[
-        <p>Free Jenkinsfile editing support for GoLand and IntelliJ-based IDEs.</p>
-        <p>Includes Groovy syntax highlighting and syntax checks, Pipeline completion, Jenkins GDSL import, and formatting.</p>
+        <p>Free Jenkinsfile editor for GoLand and IntelliJ-based IDEs.</p>
+        <p>Includes Groovy and Jenkins Pipeline syntax highlighting, grammar checks, context-aware completion, named-field highlighting, an outline in the Structure view, Jenkins GDSL import, and idempotent formatting.</p>
+        <p>Formats with <code>Ctrl+Shift+L</code> (or the IDE Reformat Code action). Formatting preserves statement line breaks and can be repeated safely.</p>
+        <p>The plugin works offline and does not collect or upload source code. Source and license: <a href="https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin">GitHub</a>.</p>
     ]]></description>
+    <change-notes><![CDATA[<ul><li>Highlight Jenkins named argument keys and add a Pipeline Structure view.</li><li>Make spacing and indentation formatting repeatable and stable.</li><li>Provide a Marketplace-ready plugin logo and metadata.</li></ul>]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
 
@@ -25,6 +29,8 @@
                            implementationClass="com.neko233.jenkinsfile.language.JenkinsfileBraceMatcher"/>
         <lang.formatter language="Jenkinsfile"
                         implementationClass="com.neko233.jenkinsfile.format.JenkinsfileFormattingModelBuilder"/>
+        <lang.psiStructureViewFactory language="Jenkinsfile"
+                                      implementationClass="com.neko233.jenkinsfile.structure.JenkinsfileStructureViewFactory"/>
         <annotator language="Jenkinsfile"
                    implementationClass="com.neko233.jenkinsfile.inspection.JenkinsfileSyntaxAnnotator"/>
         <completion.contributor language="Jenkinsfile"
