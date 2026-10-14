@@ -29,7 +29,7 @@ public final class JenkinsfileLexer extends LexerBase {
             "changeRequest", "tag", "triggeredBy", "credentials"
     );
     private static final Set<String> PIPELINE_STEPS = Set.of(
-            "addBadge", "archive", "archiveArtifacts", "bat", "booleanParam", "build", "catchError",
+            "addBadge", "archive", "archiveArtifacts", "bat", "booleanParam", "build", "catchError", "cmd",
             "checkout", "choice", "cleanWs", "configFileProvider", "credentials", "deleteDir", "dir",
             "disableConcurrentBuilds", "dockerNode", "echo", "error", "fileExists", "findFiles", "git",
             "httpRequest", "input", "isUnix", "jdk", "junit", "library", "libraryResource", "load",

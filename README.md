@@ -6,10 +6,11 @@ Free Jenkinsfile editing support for GoLand and IntelliJ-based IDEs. This plugin
 
 - Recognizes every filename containing `jenkinsfile`, case-insensitively and regardless of extension: for example, `Jenkinsfile`, `deploy.JENKINSFILE.prod`, `my-jEnKiNsFiLe.groovy`, and `release_jenkinsfile_backup`.
 - Highlights Groovy syntax, Jenkins Declarative Pipeline keywords, method calls, named argument field keys (such as `name`, `choices`, and `description`), constants, comments, strings, operators, and paired braces.
+- Highlights common script syntax inside Jenkins `sh`, `bat`/`cmd`, `powershell`, and `pwsh` string arguments, including commands, options, variables, operators, keywords, strings, and comments.
 - Reports Groovy grammar syntax errors while editing.
 - Provides context-aware completion for Declarative Pipeline sections and conditions, common built-in steps, globals, and other frequently used DSL entries.
 - Shows pipeline blocks such as `pipeline`, `stages`, `stage`, `steps`, `post`, and `when` in the IDE Structure view for quick navigation.
-- Formats blocks and expressions through the IDE's **Reformat Code** action (`Ctrl+Alt+L`) or the Jenkinsfile-only `Ctrl+Shift+L` shortcut on the default keymap. Formatting keeps statement line breaks and canonicalizes spaces and indentation, so running it again leaves the file unchanged.
+- Formats blocks and expressions through the IDE's **Reformat Code** action (`Ctrl+Alt+L`) or the Jenkinsfile-only `Ctrl+Shift+L` shortcut on the default keymap. It uses four-space indentation, separates Pipeline sections and stages, and puts longer named-argument lists on one field per line. For safe POSIX `sh` literals, it also splits command chains and long option lists into readable multiline scripts; existing multiline shell is formatted in place. Ambiguous shell constructs are left untouched. Repeating the formatter leaves the file unchanged.
 - Imports Jenkins Pipeline method and global names from a controller-generated IntelliJ GDSL file.
 
 The plugin supplies its own Jenkinsfile language support, so GoLand does not need a separate Groovy plugin. It bundles Apache Groovy's parser to check Groovy grammar.
@@ -50,6 +51,6 @@ The plugin archive is written to `build/distributions/`. Run `verifyPlugin` to c
 
 ## Compatibility
 
-The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. Version 1.0.3 was built and verified with GoLand 2026.2.1.1 and IntelliJ IDEA 2026.2.1 using the IntelliJ Plugin Verifier. Marketplace also reported Compatible for six IntelliJ IDEA versions from 2024.3.7.1 through 2026.2.3.
+The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. Version 1.0.4 passes the local IntelliJ Plugin Verifier against GoLand 2026.2.1.1 and IntelliJ IDEA 2026.2.1. Marketplace reported Compatible for six IntelliJ IDEA versions from 2024.3.7.1 through 2026.2.3 for submitted update 1.0.3.
 
 The plugin makes no network calls and does not upload source files. GDSL import reads a local file. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the bundled parser license.

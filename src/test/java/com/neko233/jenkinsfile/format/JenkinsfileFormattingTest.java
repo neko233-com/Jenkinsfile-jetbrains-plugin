@@ -1,0 +1,160 @@
+package com.neko233.jenkinsfile.format;
+
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.testFramework.fixtures.BasePlatformTestCase;
+import com.neko233.jenkinsfile.language.JenkinsfileFileType;
+
+public final class JenkinsfileFormattingTest extends BasePlatformTestCase {
+    @Override
+    protected String getTestDataPath() {
+        return java.nio.file.Path.of("src/test/testData/formatting").toAbsolutePath().toString();
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess.allowRootAccess(getTestRootDisposable(), getTestDataPath());
+        assertNotNull("Jenkinsfile parser extension must be loaded",
+                com.intellij.lang.LanguageParserDefinitions.INSTANCE.forLanguage(com.neko233.jenkinsfile.language.JenkinsfileLanguage.INSTANCE));
+        assertNotNull("Jenkinsfile formatter extension must be loaded",
+                com.intellij.lang.LanguageFormatting.INSTANCE.forLanguage(com.neko233.jenkinsfile.language.JenkinsfileLanguage.INSTANCE));
+    }
+
+    public void testUserReleasePipeline() {
+        myFixture.configureByFile("release.before.jenkinsfile");
+        format();
+        myFixture.checkResultByFile("release.after.jenkinsfile");
+        assertIdempotent();
+    }
+
+    public void testFormatActionIsRegistered() {
+        assertNotNull(ActionManager.getInstance().getAction("Jenkinsfile.Reformat"));
+    }
+
+    public void testFormatterWinsItsShortcutConflictOnlyInJenkinsfiles() {
+        assertTrue(com.intellij.openapi.actionSystem.ActionPromoter.EP_NAME.getExtensionList().stream()
+                .anyMatch(promoter -> promoter instanceof com.neko233.jenkinsfile.actions.JenkinsfileActionPromoter));
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE, "pipeline {}");
+        var actionManager = ActionManager.getInstance();
+        var formatter = actionManager.getAction("Jenkinsfile.Reformat");
+        var previousSearch = actionManager.getAction("FindPrevious");
+        assertNotNull(formatter);
+        assertNotNull(previousSearch);
+
+        var context = com.intellij.ide.DataManager.getInstance()
+                .getDataContext(myFixture.getEditor().getContentComponent());
+        var promoted = new com.neko233.jenkinsfile.actions.JenkinsfileActionPromoter()
+                .promote(java.util.List.of(previousSearch, formatter), context);
+        assertEquals(1, promoted.size());
+        assertSame(formatter, promoted.get(0));
+
+        myFixture.configureByText("plain.txt", "ordinary text");
+        context = com.intellij.ide.DataManager.getInstance()
+                .getDataContext(myFixture.getEditor().getContentComponent());
+        assertTrue(new com.neko233.jenkinsfile.actions.JenkinsfileActionPromoter()
+                .promote(java.util.List.of(previousSearch, formatter), context).isEmpty());
+    }
+
+    public void testInlinePipelineAndNamedArguments() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { agent any; stages { stage('Build') { steps { echo 'hello'; sh 'make' } } } }");
+        format();
+        assertEquals("pipeline {\n    agent any;\n\n    stages {\n        stage('Build') {\n            steps {\n                echo 'hello';\n                sh 'make'\n            }\n        }\n    }\n}", myFixture.getFile().getText());
+        assertIdempotent();
+    }
+
+    public void testShortArgumentsListsAndComments() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline {\n\n options {\n\n timeout(time:   5 , unit:  'MINUTES')  ; // timeout\n\n }\n\n stages { stage('X') { steps { echo([ 'a' ,  'b' ]) } } }\n\n}");
+        format();
+        assertTrue(myFixture.getFile().getText(), myFixture.getFile().getText().contains("timeout(time: 5, unit: 'MINUTES'); // timeout"));
+        assertTrue(myFixture.getFile().getText(), myFixture.getFile().getText().contains("echo(['a', 'b'])"));
+        assertIdempotent();
+    }
+
+    public void testLongPosixShellCommandsBecomeReadableMultilineAndRemainIdempotent() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { sh 'AUTO_BUMP=true go run ./tools/production_release/cmd --action=\"$RELEASE_ACTION\" --release-branch=\"$RELEASE_BRANCH\" --release-version=\"$RELEASE_VERSION\" --component game-server --channel=\"$RELEASE_CHANNEL\" --environment=\"$RELEASE_ENVIRONMENT\"' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("sh '''\n"));
+        assertTrue(formatted, formatted.contains("AUTO_BUMP=true go run ./tools/production_release/cmd"));
+        assertTrue(formatted, formatted.contains("\\\\\n"));
+        assertTrue(formatted, formatted.contains("--action=\"$RELEASE_ACTION\""));
+        assertTrue(formatted, formatted.contains("--environment=\"$RELEASE_ENVIRONMENT\""));
+        assertIdempotent();
+    }
+
+    public void testExistingMultilinePosixShellOnlyFormatsItsBody() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { sh '''echo start; go test ./...; AUTO_BUMP=true go run ./cmd --action=\"$ACTION\"''' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("sh '''\n"));
+        assertTrue(formatted, formatted.contains("echo start\n"));
+        assertTrue(formatted, formatted.contains("go test ./...\n"));
+        assertTrue(formatted, formatted.contains("AUTO_BUMP=true go run ./cmd"));
+        assertIdempotent();
+    }
+
+    public void testNonPosixStepsAndConcatenatedScriptLiteralsAreNotRewritten() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('X') { steps { bat 'echo start; echo done'; powershell 'Write-Output start; Write-Output done'; sh 'echo first; echo second' + suffix } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("bat 'echo start; echo done'"));
+        assertTrue(formatted, formatted.contains("powershell 'Write-Output start; Write-Output done'"));
+        assertTrue(formatted, formatted.contains("sh 'echo first; echo second' + suffix"));
+        assertIdempotent();
+    }
+
+    public void testStringsAndOperatorsRemainIntact() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('X') { steps { script { def x = -1; x++; def s = '''line one\n  line two'''; def r = /a b/; echo \"${x}\" } } } } }");
+        String before = myFixture.getFile().getText();
+        format();
+        assertEquals(tokens(before), tokens(myFixture.getFile().getText()));
+        assertIdempotent();
+    }
+
+    public void testMixedCaseFilename() throws java.io.IOException {
+        var file = myFixture.getTempDirFixture().createFile("release-jEnKiNsFiLe.backup", "pipeline {}");
+        assertEquals(JenkinsfileFileType.INSTANCE, file.getFileType());
+    }
+
+    private void format() {
+        WriteCommandAction.runWriteCommandAction(getProject(), (Runnable) () ->
+                CodeStyleManager.getInstance(getProject()).reformat(myFixture.getFile()));
+        PsiDocumentManager.getInstance(getProject()).commitAllDocuments();
+    }
+
+    private void assertIdempotent() {
+        String first = myFixture.getFile().getText();
+        for (int i = 0; i < 4; i++) {
+            format();
+            assertEquals("Formatting pass " + (i + 2), first, myFixture.getFile().getText());
+        }
+    }
+
+    private static java.util.List<String> tokens(String text) {
+        var lexer = new com.neko233.jenkinsfile.language.JenkinsfileLexer();
+        var result = new java.util.ArrayList<String>();
+        lexer.start(text);
+        while (lexer.getTokenType() != null) {
+            if (lexer.getTokenType() != com.neko233.jenkinsfile.language.JenkinsfileTokenTypes.WHITE_SPACE) {
+                result.add(text.substring(lexer.getTokenStart(), lexer.getTokenEnd()));
+            }
+            lexer.advance();
+        }
+        return result;
+    }
+}

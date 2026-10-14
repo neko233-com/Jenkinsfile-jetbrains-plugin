@@ -1,10 +1,12 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     java
     id("org.jetbrains.intellij.platform") version "2.19.0"
 }
 
 group = "com.neko233"
-version = "1.0.3"
+version = "1.0.4"
 
 repositories {
     mavenCentral()
@@ -20,8 +22,11 @@ dependencies {
             create("GO", "2026.2.1")
         }
         pluginVerifier()
+        testFramework(TestFrameworkType.Platform)
     }
     implementation("org.apache.groovy:groovy:4.0.33")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.opentest4j:opentest4j:1.3.0")
 }
 
 java {

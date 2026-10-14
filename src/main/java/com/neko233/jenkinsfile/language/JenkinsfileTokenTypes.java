@@ -2,11 +2,13 @@ package com.neko233.jenkinsfile.language;
 
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import com.intellij.psi.TokenType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 public final class JenkinsfileTokenTypes {
-    public static final IElementType WHITE_SPACE = type("WHITE_SPACE");
+    // The platform formatter replaces PsiWhiteSpace leaves, which are created only for this token.
+    public static final IElementType WHITE_SPACE = TokenType.WHITE_SPACE;
     public static final IElementType IDENTIFIER = type("IDENTIFIER");
     public static final IElementType METHOD_CALL = type("METHOD_CALL");
     public static final IElementType NAMED_ARGUMENT = type("NAMED_ARGUMENT");

@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout();
+        timestamps();
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        choice(
+            name: 'RELEASE_CHANNEL',
+            choices: ['wechat', 'taptap'],
+            description: '本次唯一渠道；目标必须独立配置'
+        )
+        choice(
+            name: 'RELEASE_ACTION',
+            choices: ['restart-version', 'publish-latest'],
+            description: '默认重启历史固定工件；发布最新需要二次确认'
+        )
+        string(
+            name: 'RELEASE_VERSION',
+            defaultValue: '',
+            description: '历史重启必填已经发布成功的固定版本'
+        )
+        string(
+            name: 'RELEASE_BRANCH',
+            defaultValue: '',
+            description: '选择 release/<渠道>/<环境>/game-server/<版本>；重启该分支对应的固定工件与配置'
+        )
+        booleanParam(
+            name: 'CONFIRM_PUBLISH_LATEST',
+            defaultValue: false,
+            description: '确认上传最新源码；仅 release 保存独立发布分支，内部环境保留制品和构建记录'
+        )
+        string(
+            name: 'RELEASE_ENVIRONMENT',
+            defaultValue: 'test',
+            description: '独立环境：test/release/check/audit 等小写名称'
+        )
+        choice(
+            name: 'GAME_RESTART_MODE',
+            choices: ['force', 'seamless'],
+            description: '本次目标逻辑服：force 通知内容更新并踢下线；seamless 等现有对局结束后保留 Gate 连接切服。总 timeout 60 秒，默认强制重启。'
+        )
+        booleanParam(
+            name: 'SEND_NOTIFICATION',
+            defaultValue: false,
+            description: '明确授权发送群通知时开启；默认仅部署'
+        )
+    }
+
+    stages {
+        stage('检出 main') {
+            steps {
+                deleteDir();
+                checkout scm;
+                sh '''
+                    set -euo pipefail
+                    test "$(git branch --show-current)" = main
+                    test -z "$(git status --porcelain)"
+                    git rev-parse HEAD
+                '''
+            }
+        }
+
+        stage('发布游戏服') {
+            steps {
+                sh '''
+                    AUTO_BUMP_LOGIC_RELEASE_VERSION=true go run ./tools/production_release/cmd \\
+                        --action="$RELEASE_ACTION" \\
+                        --release-branch="$RELEASE_BRANCH" \\
+                        --release-version="$RELEASE_VERSION" \\
+                        --confirm-publish-latest="$CONFIRM_PUBLISH_LATEST" \\
+                        --component game-server \\
+                        --channel="$RELEASE_CHANNEL" \\
+                        --environment="$RELEASE_ENVIRONMENT" \\
+                        --game-restart-mode="$GAME_RESTART_MODE" \\
+                        --notify="$SEND_NOTIFICATION"
+                '''
+            }
+        }
+    }
+}

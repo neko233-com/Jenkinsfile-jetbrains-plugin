@@ -2,15 +2,14 @@
     <id>com.neko233.jenkinsfile</id>
     <name>Jenkinsfile Free</name>
     <vendor url="https://github.com/neko233-com">neko233-com</vendor>
-    <url>https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin</url>
     <description><![CDATA[
         <p>Free Jenkinsfile editor for GoLand and IntelliJ-based IDEs.</p>
         <p>Recognizes any filename containing <code>jenkinsfile</code>, regardless of letter case or file extension.</p>
-        <p>Includes Groovy and Jenkins Pipeline syntax highlighting, grammar checks, context-aware completion, named-field highlighting, an outline in the Structure view, Jenkins GDSL import, and idempotent formatting.</p>
-        <p>Formats with <code>Ctrl+Shift+L</code> (or the IDE Reformat Code action). Formatting preserves statement line breaks and can be repeated safely.</p>
+        <p>Includes Groovy and Jenkins Pipeline syntax highlighting, embedded shell, Windows batch, and PowerShell highlighting in <code>sh</code>, <code>bat</code>/<code>cmd</code>, <code>powershell</code>, and <code>pwsh</code> script literals, grammar checks, context-aware completion, named-field highlighting, an outline in the Structure view, Jenkins GDSL import, and idempotent formatting.</p>
+        <p>Formats with <code>Ctrl+Shift+L</code> (or the IDE Reformat Code action). Normalizes whitespace, separates Pipeline sections, and formats long named arguments one field per line. Safe POSIX <code>sh</code> literals are split into readable multiline scripts; existing multiline shell is formatted in place. Ambiguous shell constructs are left unchanged. Repeated formatting produces the same result.</p>
         <p>The plugin works offline and does not collect or upload source code. Source and license: <a href="https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin">GitHub</a>.</p>
     ]]></description>
-    <change-notes><![CDATA[<ul><li>Rename the plugin to Jenkinsfile Free.</li><li>Recognize every filename containing jenkinsfile, case-insensitively, including names with prefixes, suffixes, or other extensions.</li><li>Keep named-field highlighting, completion, Structure view, and idempotent formatting.</li></ul>]]></change-notes>
+    <change-notes><![CDATA[<ul><li>Format safe POSIX <code>sh</code> literals as readable multiline shell, including one option per line for long commands; format existing multiline shell in place.</li><li>Keep heredocs, shell control-flow, shebangs, and ambiguous string expressions unchanged.</li><li>Highlight common POSIX shell syntax in <code>sh</code>, Windows batch syntax in <code>bat</code>/<code>cmd</code>, and PowerShell syntax in <code>powershell</code>/<code>pwsh</code> script literals.</li><li>Fix whitespace handling in the platform formatter, preventing repeated formatting from accumulating spaces and blank lines.</li><li>Use consistent block indentation and compact statement spacing, with a single blank line between Pipeline sections and stages.</li><li>Format calls with three or more named fields, and long argument lists, one argument per line.</li><li>Retain case-insensitive filename detection and named-field highlighting.</li></ul>]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
 
@@ -34,6 +33,10 @@
                                       implementationClass="com.neko233.jenkinsfile.structure.JenkinsfileStructureViewFactory"/>
         <annotator language="Jenkinsfile"
                    implementationClass="com.neko233.jenkinsfile.inspection.JenkinsfileSyntaxAnnotator"/>
+        <annotator language="Jenkinsfile"
+                   implementationClass="com.neko233.jenkinsfile.highlighting.JenkinsfileEmbeddedScriptAnnotator"/>
+        <postFormatProcessor implementation="com.neko233.jenkinsfile.highlighting.JenkinsfileShellPostFormatProcessor"/>
+        <actionPromoter implementation="com.neko233.jenkinsfile.actions.JenkinsfileActionPromoter"/>
         <completion.contributor language="Jenkinsfile"
                                 implementationClass="com.neko233.jenkinsfile.completion.JenkinsfileCompletionContributor"/>
     </extensions>

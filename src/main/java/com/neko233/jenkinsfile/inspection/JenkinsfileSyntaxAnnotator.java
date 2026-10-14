@@ -30,9 +30,12 @@ public final class JenkinsfileSyntaxAnnotator implements Annotator {
             // Syntax diagnostics are read from the compiler's error collector below.
         }
 
-        for (Object item : unit.getErrorCollector().getErrors()) {
+        var errors = unit.getErrorCollector().getErrors();
+        if (errors == null) return;
+        for (Object item : errors) {
             if (!(item instanceof SyntaxErrorMessage syntaxMessage)) continue;
             SyntaxException syntax = syntaxMessage.getCause();
+            if (syntax == null) continue;
             int start = offsetAt(text, syntax.getStartLine(), syntax.getStartColumn());
             int end = offsetAt(text, syntax.getEndLine(), syntax.getEndColumn());
             start = Math.min(Math.max(0, start), text.length());
