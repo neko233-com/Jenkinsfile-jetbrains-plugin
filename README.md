@@ -51,6 +51,6 @@ The plugin archive is written to `build/distributions/`. Run `verifyPlugin` to c
 
 ## Compatibility
 
-The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. Version 1.0.5 passes the local IntelliJ Plugin Verifier against the installed GoLand build `GO-262.9437.286`. Marketplace reports **Compatible** for IntelliJ IDEA 2026.2.3 on update 1.0.5. Marketplace verification for GoLand 2026.3 EAP build `263.6259.35` has been scheduled and is pending; the declared compatibility range remains 243 through 262.*.
+The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. Version 1.0.5 passes the local IntelliJ Plugin Verifier against the installed GoLand build `GO-262.9437.286`. Marketplace Plugin Verifier 1.410 reports **Compatible** for GoLand 2026.3 EAP build `263.6259.35` and IntelliJ IDEA 2026.2.3; the declared compatibility range remains 243 through 262.*.
 
 The plugin makes no network calls and does not upload source files. GDSL import reads a local file. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the bundled parser license.
