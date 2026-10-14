@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** Produces readable multiline Groovy literals for simple, safely separable POSIX shell scripts. */
+/** Produces readable multiline Groovy literals for safely separable embedded scripts. */
 final class EmbeddedShellFormatter {
     private static final int MAX_LINE_LENGTH = 100;
     private static final Set<String> COMPLEX_SHELL_WORDS = Set.of(
@@ -17,9 +17,14 @@ final class EmbeddedShellFormatter {
     private EmbeddedShellFormatter() { }
 
     static @Nullable String formatLiteral(String source, JenkinsfileEmbeddedScriptAnnotator.ScriptLiteral literal) {
-        if (literal.mode() != EmbeddedScriptLexer.Mode.POSIX
-                || (literal.quote() != '\'' && literal.quote() != '"')
+        if ((literal.quote() != '\'' && literal.quote() != '"')
                 || (literal.delimiter() != 1 && literal.delimiter() != 3)) return null;
+
+        if (hasEscapedGroovyLineBreak(literal.text())) return null;
+
+        if (literal.mode() != EmbeddedScriptLexer.Mode.POSIX) {
+            return EmbeddedCommandFormatter.formatLiteral(source, literal);
+        }
 
         String body = literal.text();
         if (body.trim().startsWith("#!") || body.contains("<<")
@@ -29,22 +34,34 @@ final class EmbeddedShellFormatter {
         String newline = source.contains("\r\n") ? "\r\n" : "\n";
         String lineIndent = indentationAt(source, literal.stepStart());
         String bodyIndent = lineIndent + "    ";
-        FormattedBody formatted = splitCommands(body, newline, bodyIndent);
-        if (formatted == null || (!formatted.changed() && !formatted.wasMultiline())) return null;
+        List<String> formatted = splitCommands(body, newline, bodyIndent);
+        if (formatted == null) return null;
 
         String delimiter = String.valueOf(literal.quote()).repeat(3);
-        return delimiter + newline + bodyIndent + String.join(newline + bodyIndent, formatted.lines())
+        return delimiter + newline + bodyIndent + String.join(newline + bodyIndent, formatted)
                 + newline + lineIndent + delimiter;
     }
 
-    private static FormattedBody splitCommands(String body, String newline, String bodyIndent) {
+    private static boolean hasEscapedGroovyLineBreak(String body) {
+        for (int i = 0; i < body.length(); i++) {
+            if (body.charAt(i) != '\\') continue;
+            int end = i + 1;
+            while (end < body.length() && body.charAt(end) == '\\') end++;
+            if (((end - i) & 1) == 1 && end < body.length()
+                    && (body.charAt(end) == 'n' || body.charAt(end) == 'r' || body.charAt(end) == '\n' || body.charAt(end) == '\r')) {
+                return true;
+            }
+            i = end - 1;
+        }
+        return false;
+    }
+
+    private static @Nullable List<String> splitCommands(String body, String newline, String bodyIndent) {
         List<String> lines = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         char quote = 0;
         int parentheses = 0;
         int parameterExpansionDepth = 0;
-        boolean wasMultiline = body.contains("\n") || body.contains("\r");
-        boolean separated = false;
 
         for (int i = 0; i < body.length();) {
             char c = body.charAt(i);
@@ -128,7 +145,6 @@ final class EmbeddedShellFormatter {
                 if ((i + 1 < body.length() && (body.charAt(i + 1) == ';' || body.charAt(i + 1) == '&'))
                         || (i > 0 && body.charAt(i - 1) == '&')) return null;
                 addLine(lines, current);
-                separated = true;
                 i++;
                 continue;
             }
@@ -145,14 +161,12 @@ final class EmbeddedShellFormatter {
                 trimRight(current);
                 current.append(' ').append(operator);
                 addLine(lines, current);
-                separated = true;
                 i += operator.length();
                 continue;
             }
 
             if ((c == '\n' || c == '\r') && parentheses == 0 && parameterExpansionDepth == 0) {
                 addLine(lines, current);
-                separated = true;
                 if (c == '\r' && i + 1 < body.length() && body.charAt(i + 1) == '\n') i++;
                 i++;
                 continue;
@@ -167,15 +181,12 @@ final class EmbeddedShellFormatter {
         if (lines.isEmpty()) return null;
 
         List<String> wrapped = new ArrayList<>();
-        boolean wasWrapped = false;
         for (String line : lines) {
             String formattedLine = wrapLongSimpleCommand(line, newline, bodyIndent);
             if (formattedLine == null) return null;
-            wasWrapped |= formattedLine.indexOf('\n') >= 0;
             wrapped.add(formattedLine);
         }
-        if (!separated && !wasWrapped) return null;
-        return new FormattedBody(List.copyOf(wrapped), wasMultiline, separated || wasWrapped);
+        return List.copyOf(wrapped);
     }
 
     private static String wrapLongSimpleCommand(String line, String newline, String bodyIndent) {
@@ -281,6 +292,5 @@ final class EmbeddedShellFormatter {
         return source.substring(lineStart, end);
     }
 
-    private record FormattedBody(List<String> lines, boolean wasMultiline, boolean changed) { }
     private record WordBoundary(int offset, int wordStart) { }
 }

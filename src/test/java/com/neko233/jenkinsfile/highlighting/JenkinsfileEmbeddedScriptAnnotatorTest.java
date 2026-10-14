@@ -74,16 +74,33 @@ public final class JenkinsfileEmbeddedScriptAnnotatorTest extends BasePlatformTe
         assertShellFormattingSkipped("#!/bin/sh\necho start; echo done");
         assertShellFormattingSkipped("cat <<EOF\nvalue; still heredoc\nEOF");
         assertShellFormattingSkipped("if test -f file; then echo yes; fi");
+        assertScriptFormattingSkipped("bat", "if exist output.txt (echo found)");
+        assertScriptFormattingSkipped("bat", "\n    if exist output.txt echo found");
+        assertScriptFormattingSkipped("powershell", "if ($true) { Write-Output yes }");
         String continued = "echo first \\" + "\n" + "    && echo second";
         String source = "pipeline { stages { stage('x') { steps { sh '''" + continued + "''' } } } }";
         var literal = JenkinsfileEmbeddedScriptAnnotator.findScriptLiterals(source).get(0);
         assertNull(EmbeddedShellFormatter.formatLiteral(source, literal));
     }
 
-    private static void assertShellFormattingSkipped(String script) {
-        String source = "pipeline { stages { stage('x') { steps { sh " + quoteGroovy(script) + " } } } }";
+    public void testShellFormatterSkipsGroovyEscapedLineBreaks() {
+        String source = "pipeline { stages { stage('x') { steps { sh 'echo first\\necho second' } } } }";
         var literal = JenkinsfileEmbeddedScriptAnnotator.findScriptLiterals(source).get(0);
-        assertNull("Unsafe or ambiguous shell source must be left alone: " + script,
+        assertNull(EmbeddedShellFormatter.formatLiteral(source, literal));
+
+        String multilineSource = "pipeline { stages { stage('x') { steps { bat '''\n    if exist output.txt echo found\n''' } } } }";
+        var multilineLiteral = JenkinsfileEmbeddedScriptAnnotator.findScriptLiterals(multilineSource).get(0);
+        assertNull(EmbeddedShellFormatter.formatLiteral(multilineSource, multilineLiteral));
+    }
+
+    private static void assertShellFormattingSkipped(String script) {
+        assertScriptFormattingSkipped("sh", script);
+    }
+
+    private static void assertScriptFormattingSkipped(String step, String script) {
+        String source = "pipeline { stages { stage('x') { steps { " + step + " " + quoteGroovy(script) + " } } } }";
+        var literal = JenkinsfileEmbeddedScriptAnnotator.findScriptLiterals(source).get(0);
+        assertNull("Unsafe or ambiguous " + step + " source must be left alone: " + script,
                 EmbeddedShellFormatter.formatLiteral(source, literal));
     }
 

@@ -62,7 +62,7 @@ public final class JenkinsfileFormattingTest extends BasePlatformTestCase {
         myFixture.configureByText(JenkinsfileFileType.INSTANCE,
                 "pipeline { agent any; stages { stage('Build') { steps { echo 'hello'; sh 'make' } } } }");
         format();
-        assertEquals("pipeline {\n    agent any;\n\n    stages {\n        stage('Build') {\n            steps {\n                echo 'hello';\n                sh 'make'\n            }\n        }\n    }\n}", myFixture.getFile().getText());
+        assertEquals("pipeline {\n    agent any;\n\n    stages {\n        stage('Build') {\n            steps {\n                echo 'hello';\n                sh '''\n                    make\n                '''\n            }\n        }\n    }\n}", myFixture.getFile().getText());
         assertIdempotent();
     }
 
@@ -104,15 +104,95 @@ public final class JenkinsfileFormattingTest extends BasePlatformTestCase {
         assertIdempotent();
     }
 
-    public void testNonPosixStepsAndConcatenatedScriptLiteralsAreNotRewritten() {
+    public void testLongWindowsCommandScriptsBecomeReadableMultilineAndRemainIdempotent() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { bat 'robocopy C:\\\\src C:\\\\dst /E /COPY:DAT /R:3 /W:5 /Z /MT:8 /V /ETA /TEE /LOG:release.log /DCOPY:DAT /COPYALL /PURGE /MIR && echo done' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("bat '''\n"));
+        assertTrue(formatted, formatted.contains("/COPY:DAT"));
+        assertTrue(formatted, formatted.contains(" /E ^\n"));
+        assertTrue(formatted, formatted.contains("&& ^\n"));
+        assertTrue(formatted, formatted.contains("echo done"));
+        assertIdempotent();
+    }
+
+    public void testLongPowerShellCommandsBecomeReadableMultilineAndRemainIdempotent() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { powershell 'Invoke-WebRequest -Uri \"$env:RELEASE_URL\" -OutFile \"$env:PACKAGE_PATH\" -Method Get -MaximumRedirection 5 -ErrorAction Stop' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("powershell '''\n"));
+        assertTrue(formatted, formatted.contains("-Uri \"$env:RELEASE_URL\" `\n"));
+        assertTrue(formatted, formatted.contains("-ErrorAction Stop"));
+        assertIdempotent();
+    }
+
+    public void testShortShellFamilyScriptsBecomeMultilineAndRemainIdempotent() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { sh 'echo shell'; bat 'echo batch'; cmd 'echo command'; powershell 'Write-Output ps'; pwsh 'Write-Output pwsh' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        for (String step : new String[]{"sh", "bat", "cmd", "powershell", "pwsh"}) {
+            assertTrue(formatted, formatted.contains(step + " '''\n"));
+        }
+        assertTrue(formatted, formatted.contains("echo shell"));
+        assertTrue(formatted, formatted.contains("echo batch"));
+        assertTrue(formatted, formatted.contains("echo command"));
+        assertTrue(formatted, formatted.contains("Write-Output ps"));
+        assertTrue(formatted, formatted.contains("Write-Output pwsh"));
+        assertIdempotent();
+    }
+
+    public void testExistingMultilineWindowsScriptsFormatOnlyTheirScriptBodies() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { cmd 'echo start && echo done'; powershell 'Write-Output start; Write-Output done' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("cmd '''\n"));
+        assertTrue(formatted, formatted.contains("&& ^\n"));
+        assertTrue(formatted, formatted.contains("powershell '''\n"));
+        assertTrue(formatted, formatted.contains("Write-Output start;\n"));
+        assertTrue(formatted, formatted.contains("Write-Output done"));
+        assertIdempotent();
+    }
+
+    public void testMultilineWindowsScriptsKeepStatementsAndFormatOnlyTheScriptBodies() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('Release') { steps { cmd '''echo start\necho done'''; powershell '''Write-Output start\nWrite-Output done''' } } } }");
+
+        format();
+
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("cmd '''\n"));
+        assertTrue(formatted, formatted.contains("echo start\n"));
+        assertTrue(formatted, formatted.contains("echo done"));
+        assertTrue(formatted, formatted.contains("powershell '''\n"));
+        assertTrue(formatted, formatted.contains("Write-Output start\n"));
+        assertTrue(formatted, formatted.contains("Write-Output done"));
+        assertIdempotent();
+    }
+
+    public void testCmdSemicolonsAndConcatenatedScriptLiteralsArePreserved() {
         myFixture.configureByText(JenkinsfileFileType.INSTANCE,
                 "pipeline { stages { stage('X') { steps { bat 'echo start; echo done'; powershell 'Write-Output start; Write-Output done'; sh 'echo first; echo second' + suffix } } } }");
 
         format();
 
         String formatted = myFixture.getFile().getText();
-        assertTrue(formatted, formatted.contains("bat 'echo start; echo done'"));
-        assertTrue(formatted, formatted.contains("powershell 'Write-Output start; Write-Output done'"));
+        assertTrue(formatted, formatted.contains("bat '''\n"));
+        assertTrue(formatted, formatted.contains("echo start; echo done"));
+        assertTrue(formatted, formatted.contains("powershell '''\n"));
+        assertTrue(formatted, formatted.contains("Write-Output start;\n"));
+        assertTrue(formatted, formatted.contains("Write-Output done"));
         assertTrue(formatted, formatted.contains("sh 'echo first; echo second' + suffix"));
         assertIdempotent();
     }
