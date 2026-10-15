@@ -17,7 +17,7 @@ The plugin supplies its own Jenkinsfile language support, so GoLand does not nee
 
 ## VS Code
 
-The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. It provides Jenkinsfile highlighting, common completions, an Outline view, structural diagnostics, and repeatable formatting. See [`vscode/README.md`](vscode/README.md) for features, limitations, and build instructions. The VS Code Marketplace listing is not public until its publisher account accepts and publishes the VSIX.
+The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. It provides Jenkinsfile highlighting, common completions, an Outline view, structural diagnostics, and repeatable formatting. [Download the VSIX](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/vscode-v1.0.0) or see [`vscode/README.md`](vscode/README.md) for features, limitations, and build instructions. The VS Code Marketplace listing still requires its publisher account to sign in and publish the VSIX.
 
 Jenkins Pipeline DSL entries can vary by controller version, installed plugins, and shared libraries. The bundled completion list is a useful baseline; importing GDSL adds method and global names from a specific controller. The importer currently does not read method signatures or validate Jenkins-specific Pipeline rules. Use the target controller's Pipeline Syntax and linter for server-side validation.
 
