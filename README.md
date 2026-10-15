@@ -15,6 +15,10 @@ Free Jenkinsfile editing support for GoLand and IntelliJ-based IDEs. This plugin
 
 The plugin supplies its own Jenkinsfile language support, so GoLand does not need a separate Groovy plugin. It bundles Apache Groovy's parser to check Groovy grammar.
 
+## VS Code
+
+The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. It provides Jenkinsfile highlighting, common completions, an Outline view, structural diagnostics, and repeatable formatting. See [`vscode/README.md`](vscode/README.md) for features, limitations, and build instructions. The VS Code Marketplace listing is not public until its publisher account accepts and publishes the VSIX.
+
 Jenkins Pipeline DSL entries can vary by controller version, installed plugins, and shared libraries. The bundled completion list is a useful baseline; importing GDSL adds method and global names from a specific controller. The importer currently does not read method signatures or validate Jenkins-specific Pipeline rules. Use the target controller's Pipeline Syntax and linter for server-side validation.
 
 ## Import DSL entries from Jenkins

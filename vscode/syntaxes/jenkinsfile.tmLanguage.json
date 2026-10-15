@@ -1,0 +1,419 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Jenkinsfile",
+  "scopeName": "source.jenkinsfile",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#embedded-shell"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#regex"
+    },
+    {
+      "include": "#named-arguments"
+    },
+    {
+      "include": "#pipeline-keywords"
+    },
+    {
+      "include": "#groovy-keywords"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#method-calls"
+    },
+    {
+      "include": "#variables"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#punctuation"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.jenkinsfile",
+          "begin": "//",
+          "end": "$"
+        },
+        {
+          "name": "comment.block.jenkinsfile",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "embedded-shell": {
+      "patterns": [
+        {
+          "name": "meta.embedded.inline.shell.jenkinsfile",
+          "begin": "\\b(sh)\\s*('''|\\\"\\\"\\\"|'|\\\")",
+          "beginCaptures": {
+            "1": {
+              "name": "support.function.pipeline.jenkinsfile"
+            },
+            "2": {
+              "name": "punctuation.definition.string.begin.jenkinsfile"
+            }
+          },
+          "end": "(?<!\\\\)\\2",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.jenkinsfile"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#shell-common"
+            }
+          ]
+        },
+        {
+          "name": "meta.embedded.inline.cmd.jenkinsfile",
+          "begin": "\\b(?:bat|cmd)\\s*('''|\\\"\\\"\\\"|'|\\\")",
+          "beginCaptures": {
+            "0": {
+              "name": "support.function.pipeline.jenkinsfile"
+            },
+            "1": {
+              "name": "punctuation.definition.string.begin.jenkinsfile"
+            }
+          },
+          "end": "(?<!\\\\)\\1",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.jenkinsfile"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#cmd-common"
+            }
+          ]
+        },
+        {
+          "name": "meta.embedded.inline.powershell.jenkinsfile",
+          "begin": "\\b(?:powershell|pwsh)\\s*('''|\\\"\\\"\\\"|'|\\\")",
+          "beginCaptures": {
+            "0": {
+              "name": "support.function.pipeline.jenkinsfile"
+            },
+            "1": {
+              "name": "punctuation.definition.string.begin.jenkinsfile"
+            }
+          },
+          "end": "(?<!\\\\)\\1",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.jenkinsfile"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#powershell-common"
+            }
+          ]
+        }
+      ]
+    },
+    "shell-common": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.shell.jenkinsfile",
+          "match": "(^|\\s)#.*$"
+        },
+        {
+          "name": "variable.other.shell.jenkinsfile",
+          "match": "\\$\\{?[A-Za-z_][A-Za-z0-9_]*\\}?"
+        },
+        {
+          "name": "constant.other.option.shell.jenkinsfile",
+          "match": "--?[A-Za-z][A-Za-z0-9_-]*"
+        },
+        {
+          "name": "keyword.operator.shell.jenkinsfile",
+          "match": "&&|\\|\\||\\|(?!=)|;|>>?|2>&1"
+        },
+        {
+          "name": "support.function.shell.jenkinsfile",
+          "match": "\\b(?:awk|cat|chmod|cp|curl|docker|echo|find|git|go|grep|install|java|make|mkdir|mv|npm|pwd|python|rm|sed|ssh|tar|test|unzip|wget)\\b"
+        },
+        {
+          "name": "string.quoted.double.shell.jenkinsfile",
+          "begin": "\"",
+          "end": "(?<!\\\\)\"",
+          "patterns": [
+            {
+              "include": "#shell-variable"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.shell.jenkinsfile",
+          "begin": "'",
+          "end": "'"
+        }
+      ]
+    },
+    "shell-variable": {
+      "patterns": [
+        {
+          "name": "variable.other.shell.jenkinsfile",
+          "match": "\\$\\{?[A-Za-z_][A-Za-z0-9_]*\\}?"
+        }
+      ]
+    },
+    "cmd-common": {
+      "patterns": [
+        {
+          "name": "variable.other.environment.cmd.jenkinsfile",
+          "match": "%[A-Za-z_][A-Za-z0-9_]*%"
+        },
+        {
+          "name": "keyword.operator.cmd.jenkinsfile",
+          "match": "&&|\\|\\||(?<!\\^)&|\\|"
+        },
+        {
+          "name": "support.function.cmd.jenkinsfile",
+          "match": "(?i)\\b(?:cd|copy|del|dir|echo|findstr|for|git|go|mkdir|move|npm|powershell|set|where|whoami)\\b"
+        },
+        {
+          "name": "constant.other.option.cmd.jenkinsfile",
+          "match": "/[A-Za-z][A-Za-z0-9_-]*"
+        },
+        {
+          "name": "string.quoted.double.cmd.jenkinsfile",
+          "begin": "\"",
+          "end": "(?<!\\\\)\"",
+          "patterns": [
+            {
+              "include": "#cmd-variable"
+            }
+          ]
+        }
+      ]
+    },
+    "cmd-variable": {
+      "patterns": [
+        {
+          "name": "variable.other.environment.cmd.jenkinsfile",
+          "match": "%[A-Za-z_][A-Za-z0-9_]*%"
+        }
+      ]
+    },
+    "powershell-common": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.powershell.jenkinsfile",
+          "match": "#.*$"
+        },
+        {
+          "name": "variable.other.powershell.jenkinsfile",
+          "match": "\\$[A-Za-z_][A-Za-z0-9_:]*"
+        },
+        {
+          "name": "constant.other.option.powershell.jenkinsfile",
+          "match": "-[A-Za-z][A-Za-z0-9_-]*"
+        },
+        {
+          "name": "keyword.operator.powershell.jenkinsfile",
+          "match": "&&|\\|\\||\\||;|=|\"|`"
+        },
+        {
+          "name": "support.function.powershell.jenkinsfile",
+          "match": "(?i)\\b(?:Add-Content|Copy-Item|Get-ChildItem|Get-Content|Invoke-WebRequest|New-Item|Remove-Item|Set-Content|Start-Process|Test-Path|Write-Error|Write-Output)\\b"
+        },
+        {
+          "name": "string.quoted.double.powershell.jenkinsfile",
+          "begin": "\"",
+          "end": "(?<!\\\\)\"",
+          "patterns": [
+            {
+              "include": "#powershell-variable"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.powershell.jenkinsfile",
+          "begin": "'",
+          "end": "'"
+        }
+      ]
+    },
+    "powershell-variable": {
+      "patterns": [
+        {
+          "name": "variable.other.powershell.jenkinsfile",
+          "match": "\\$[A-Za-z_][A-Za-z0-9_:]*"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.triple.single.jenkinsfile",
+          "begin": "'''",
+          "end": "'''"
+        },
+        {
+          "name": "string.quoted.triple.double.jenkinsfile",
+          "begin": "\\\"\\\"\\\"",
+          "end": "\\\"\\\"\\\"",
+          "patterns": [
+            {
+              "include": "#interpolation"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.jenkinsfile",
+          "begin": "'",
+          "end": "(?<!\\\\)'"
+        },
+        {
+          "name": "string.quoted.double.jenkinsfile",
+          "begin": "\\\"",
+          "end": "(?<!\\\\)\\\"",
+          "patterns": [
+            {
+              "include": "#interpolation"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.backtick.jenkinsfile",
+          "begin": "`",
+          "end": "(?<!\\\\)`"
+        }
+      ]
+    },
+    "interpolation": {
+      "patterns": [
+        {
+          "name": "variable.other.interpolation.jenkinsfile",
+          "match": "\\$\\{[^}]+\\}|\\$[A-Za-z_][A-Za-z0-9_]*"
+        }
+      ]
+    },
+    "regex": {
+      "patterns": [
+        {
+          "name": "string.regexp.jenkinsfile",
+          "begin": "/(?=[^/*])",
+          "end": "/[a-z]*"
+        }
+      ]
+    },
+    "named-arguments": {
+      "patterns": [
+        {
+          "name": "meta.named-argument.jenkinsfile",
+          "match": "\\b([A-Za-z_$][A-Za-z0-9_$]*)(\\s*)(:)\\s*",
+          "captures": {
+            "1": {
+              "name": "variable.parameter.named.jenkinsfile"
+            },
+            "3": {
+              "name": "punctuation.separator.key-value.jenkinsfile"
+            }
+          }
+        }
+      ]
+    },
+    "pipeline-keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.pipeline.jenkinsfile",
+          "match": "\\b(?:pipeline|agent|any|none|label|node|docker|dockerfile|kubernetes|stages|stage|steps|post|always|success|failure|unstable|changed|aborted|unsuccessful|cleanup|regression|fixed|environment|options|parameters|triggers|tools|input|when|branch|expression|not|allOf|anyOf|matrix|axes|axis|exclude|excludes|script|parallel|sequential|beforeAgent|beforeInput|beforeOptions|buildingTag|changelog|changeset|changeRequest|tag|triggeredBy|credentials)\\b"
+        }
+      ]
+    },
+    "groovy-keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.groovy.jenkinsfile",
+          "match": "\\b(?:as|assert|break|case|catch|class|continue|default|do|else|enum|extends|finally|for|if|implements|import|in|instanceof|interface|new|package|return|super|switch|this|throw|throws|trait|try|while|def|void|public|protected|private|static|final|true|false|null)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.jenkinsfile",
+          "match": "\\b(?:BUILD_ID|BUILD_NUMBER|BUILD_TAG|BUILD_URL|JOB_NAME|JOB_BASE_NAME|JOB_URL|NODE_NAME|NODE_LABELS|WORKSPACE|JENKINS_HOME|JENKINS_URL|BRANCH_NAME|CHANGE_ID|CHANGE_BRANCH|CHANGE_TARGET|TAG_NAME|SCM_URL|SCM_BRANCH|SUCCESS|FAILURE|UNSTABLE|ABORTED)\\b"
+        },
+        {
+          "name": "constant.numeric.jenkinsfile",
+          "match": "\\b(?:0[xX][0-9A-Fa-f_]+|0[bB][01_]+|\\d[\\d_]*(?:\\.[\\d_]+)?(?:[eE][+-]?\\d+)?[GgDdFfLlIiUu]*)\\b"
+        }
+      ]
+    },
+    "method-calls": {
+      "patterns": [
+        {
+          "name": "support.function.pipeline.jenkinsfile",
+          "match": "\\b(?:addBadge|archiveArtifacts|bat|booleanParam|build|catchError|checkout|choice|cleanWs|cmd|deleteDir|dir|disableConcurrentBuilds|echo|error|fileExists|git|input|isUnix|junit|lock|mail|password|powershell|properties|pwd|pwsh|readFile|retry|sh|sleep|stash|string|timestamps|timeout|unstable|unstash|withCredentials|withEnv|writeFile)\\b(?=\\s*(?:\\(|['\"]))"
+        },
+        {
+          "name": "entity.name.function.groovy.jenkinsfile",
+          "match": "\\b[A-Za-z_$][A-Za-z0-9_$]*(?=\\s*\\()"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.groovy.jenkinsfile",
+          "match": "\\$[A-Za-z_][A-Za-z0-9_]*"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.jenkinsfile",
+          "match": "\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.groovy.jenkinsfile",
+          "match": "==|!=|<=|>=|=~|==~|&&|\\|\\||\\?\\.|\\*\\.|\\.\\&|::|->|\\+\\+|--|\\+=|-=|\\*=|/=|%=|\\?|=|[+*/%<>!~&|^]"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.section.block.begin.jenkinsfile",
+          "match": "[{}\\[\\]()]"
+        },
+        {
+          "name": "punctuation.separator.jenkinsfile",
+          "match": "[,;.]"
+        },
+        {
+          "name": "punctuation.definition.annotation.jenkinsfile",
+          "match": "@"
+        }
+      ]
+    }
+  }
+}

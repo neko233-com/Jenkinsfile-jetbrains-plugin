@@ -1,0 +1,93 @@
+{
+  "name": "jenkinsfile-free",
+  "displayName": "Jenkinsfile Free",
+  "description": "Free Jenkinsfile syntax highlighting, completion, outline and idempotent formatting.",
+  "version": "1.0.0",
+  "publisher": "neko233-com",
+  "author": {
+    "name": "neko233-com",
+    "url": "https://github.com/neko233-com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin.git",
+    "directory": "vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/issues"
+  },
+  "homepage": "https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/tree/main/vscode#readme",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters"
+  ],
+  "keywords": [
+    "jenkinsfile",
+    "jenkins",
+    "pipeline",
+    "groovy",
+    "formatter"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:jenkinsfile",
+    "onCommand:jenkinsfileFree.formatDocument"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "jenkinsfile",
+        "aliases": [
+          "Jenkinsfile",
+          "Jenkinsfile Free"
+        ],
+        "extensions": [
+          ".jenkinsfile"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jenkinsfile",
+        "scopeName": "source.jenkinsfile",
+        "path": "./syntaxes/jenkinsfile.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "jenkinsfileFree.formatDocument",
+        "title": "Format Jenkinsfile",
+        "category": "Jenkinsfile Free"
+      }
+    ],
+    "configurationDefaults": {
+      "[jenkinsfile]": {
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.wordWrap": "off"
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p .",
+    "test": "tsc -p tsconfig.test.json && node --test out-test/test/formatter.test.js test/grammar.test.mjs",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --no-yarn"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^4.0.0",
+    "typescript": "^5.8.3",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
+  }
+}

@@ -72,11 +72,11 @@ public final class JenkinsfileFormattingModelBuilder implements FormattingModelB
             IElementType parentType = parent.getElementType();
             IElementType type = myNode.getElementType();
             if (parentType == CURLY_GROUP) {
-                if (type == LEFT_BRACE || type == RIGHT_BRACE) return Indent.getNoneIndent();
+                if (isGroup(type) || type == LEFT_BRACE || type == RIGHT_BRACE) return Indent.getNoneIndent();
                 return Indent.getIndent(Indent.Type.NORMAL, false, true);
             }
             if (parentType == PAREN_GROUP || parentType == BRACKET_GROUP) {
-                if (type == LEFT_PAREN || type == RIGHT_PAREN || type == LEFT_BRACKET || type == RIGHT_BRACKET) {
+                if (isGroup(type) || type == LEFT_PAREN || type == RIGHT_PAREN || type == LEFT_BRACKET || type == RIGHT_BRACKET) {
                     return Indent.getNoneIndent();
                 }
                 return Indent.getIndent(Indent.Type.NORMAL, false, true);
@@ -119,6 +119,10 @@ public final class JenkinsfileFormattingModelBuilder implements FormattingModelB
         @Override
         public @NotNull TextRange getTextRange() {
             return myNode.getTextRange();
+        }
+
+        private static boolean isGroup(IElementType type) {
+            return type == CURLY_GROUP || type == PAREN_GROUP || type == BRACKET_GROUP;
         }
 
     }

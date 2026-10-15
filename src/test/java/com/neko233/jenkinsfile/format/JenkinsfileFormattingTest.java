@@ -66,6 +66,45 @@ public final class JenkinsfileFormattingTest extends BasePlatformTestCase {
         assertIdempotent();
     }
 
+    public void testNestedParametersAndStagesUseOneIndentPerBlock() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline{parameters{choice(name:'CHANNEL',choices:['wechat','taptap'],description:'target'); string(name:'VERSION',defaultValue:'',description:'version')} stages{stage('Build'){steps{sh 'echo ok'}} stage('Deploy'){steps{sh 'echo done'}}}}}");
+
+        format();
+
+        assertEquals("pipeline {\n"
+                        + "    parameters {\n"
+                        + "        choice(\n"
+                        + "            name: 'CHANNEL',\n"
+                        + "            choices: ['wechat', 'taptap'],\n"
+                        + "            description: 'target'\n"
+                        + "        );\n"
+                        + "        string(\n"
+                        + "            name: 'VERSION',\n"
+                        + "            defaultValue: '',\n"
+                        + "            description: 'version'\n"
+                        + "        )\n"
+                        + "    }\n\n"
+                        + "    stages {\n"
+                        + "        stage('Build') {\n"
+                        + "            steps {\n"
+                        + "                sh '''\n"
+                        + "                    echo ok\n"
+                        + "                '''\n"
+                        + "            }\n"
+                        + "        }\n\n"
+                        + "        stage('Deploy') {\n"
+                        + "            steps {\n"
+                        + "                sh '''\n"
+                        + "                    echo done\n"
+                        + "                '''\n"
+                        + "            }\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}", myFixture.getFile().getText());
+        assertIdempotent();
+    }
+
     public void testShortArgumentsListsAndComments() {
         myFixture.configureByText(JenkinsfileFileType.INSTANCE,
                 "pipeline {\n\n options {\n\n timeout(time:   5 , unit:  'MINUTES')  ; // timeout\n\n }\n\n stages { stage('X') { steps { echo([ 'a' ,  'b' ]) } } }\n\n}");
