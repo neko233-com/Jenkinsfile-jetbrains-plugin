@@ -38,7 +38,7 @@ public final class JenkinsfileShellPostFormatProcessor implements PostFormatProc
         Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
         if (document == null || document.getTextLength() > 250_000) return rangeToFormat;
 
-        int delta = indentFirstChildren(file, document, rangeToFormat, settings);
+        int delta = indentStructure(file, document, rangeToFormat, settings);
         String source = document.getText();
         List<JenkinsfileEmbeddedScriptAnnotator.ScriptLiteral> scripts =
                 JenkinsfileEmbeddedScriptAnnotator.findScriptLiterals(source);
@@ -62,12 +62,11 @@ public final class JenkinsfileShellPostFormatProcessor implements PostFormatProc
     }
 
     /**
-     * IntelliJ's spacing formatter can leave the first leaf inside a delimiter group at column zero.
-     * Restore just that first line from the opener's indentation; later siblings remain governed by
-     * the regular formatting model. The Jenkinsfile lexer treats strings and comments atomically,
-     * so their contents are never reindented here.
+     * Use delimiter structure for every code line, so one misplaced first child cannot become the
+     * indentation anchor for its siblings. Strings and comments are atomic lexer tokens: only
+     * whitespace before a token changes, never the contents of a multiline literal or comment.
      */
-    private static int indentFirstChildren(PsiFile file, Document document, TextRange range,
+    private static int indentStructure(PsiFile file, Document document, TextRange range,
                                            CodeStyleSettings settings) {
         String source = document.getText();
         var options = settings.getIndentOptions(file.getFileType());
@@ -81,34 +80,28 @@ public final class JenkinsfileShellPostFormatProcessor implements PostFormatProc
         while (lexer.getTokenType() != null) {
             IElementType type = lexer.getTokenType();
             int tokenStart = lexer.getTokenStart();
-            if (isCloser(type)) {
-                if (!groups.isEmpty() && groups.peek().closer == type) groups.pop();
-            } else if (type != WHITE_SPACE) {
-                if (!groups.isEmpty()) {
-                    DelimiterFrame parent = groups.peek();
-                    if (!parent.hasContent) {
-                        parent.hasContent = true;
-                        int line = document.getLineNumber(tokenStart);
-                        int lineStart = document.getLineStartOffset(line);
-                        if (lineStart >= range.getStartOffset() && tokenStart <= range.getEndOffset()
-                                && line > parent.openLine && isOnlyIndent(source, lineStart, tokenStart)) {
-                            edits.put(lineStart, new IndentEdit(tokenStart, parent.childIndent));
-                        }
-                    }
+            if (type != WHITE_SPACE) {
+                DelimiterFrame closing = null;
+                if (isCloser(type) && !groups.isEmpty() && groups.peek().closer == type) {
+                    closing = groups.pop();
                 }
-
+                int line = document.getLineNumber(tokenStart);
+                int lineStart = document.getLineStartOffset(line);
+                int expectedIndent = closing != null ? closing.openIndent
+                        : groups.isEmpty() ? 0 : groups.peek().childIndent;
+                if (lineStart >= range.getStartOffset() && tokenStart <= range.getEndOffset()
+                        && isOnlyIndent(source, lineStart, tokenStart)) {
+                    edits.put(lineStart, new IndentEdit(tokenStart, expectedIndent));
+                }
                 IElementType closer = closerFor(type);
                 if (closer != null) {
-                    int line = document.getLineNumber(tokenStart);
-                    int lineStart = document.getLineStartOffset(line);
                     Integer adjustedIndent = edits.containsKey(lineStart)
                             ? edits.get(lineStart).columns
                             : null;
                     int openIndent = adjustedIndent != null
                             ? adjustedIndent
                             : countIndentColumns(source, lineStart, tokenStart, tabSize);
-                    groups.push(new DelimiterFrame(closer, line,
-                            openIndent + indentSize));
+                    groups.push(new DelimiterFrame(closer, openIndent, openIndent + indentSize));
                 }
             }
             lexer.advance();
@@ -122,7 +115,7 @@ public final class JenkinsfileShellPostFormatProcessor implements PostFormatProc
         for (Map.Entry<Integer, IndentEdit> entry : ordered) {
             int lineStart = entry.getKey();
             IndentEdit edit = entry.getValue();
-            String replacement = indentation(edit.columns, indentSize, options.USE_TAB_CHARACTER);
+            String replacement = indentation(edit.columns, tabSize, options.USE_TAB_CHARACTER);
             int oldLength = edit.tokenStart - lineStart;
             if (oldLength == replacement.length()
                     && source.regionMatches(lineStart, replacement, 0, replacement.length())) continue;
@@ -151,10 +144,10 @@ public final class JenkinsfileShellPostFormatProcessor implements PostFormatProc
         return columns;
     }
 
-    private static String indentation(int columns, int indentSize, boolean useTabs) {
+    private static String indentation(int columns, int tabSize, boolean useTabs) {
         if (!useTabs) return " ".repeat(Math.max(0, columns));
-        int tabs = Math.max(0, columns / indentSize);
-        int spaces = Math.max(0, columns % indentSize);
+        int tabs = Math.max(0, columns / tabSize);
+        int spaces = Math.max(0, columns % tabSize);
         return "\t".repeat(tabs) + " ".repeat(spaces);
     }
 
@@ -171,13 +164,12 @@ public final class JenkinsfileShellPostFormatProcessor implements PostFormatProc
 
     private static final class DelimiterFrame {
         private final IElementType closer;
-        private final int openLine;
+        private final int openIndent;
         private final int childIndent;
-        private boolean hasContent;
 
-        private DelimiterFrame(IElementType closer, int openLine, int childIndent) {
+        private DelimiterFrame(IElementType closer, int openIndent, int childIndent) {
             this.closer = closer;
-            this.openLine = openLine;
+            this.openIndent = openIndent;
             this.childIndent = childIndent;
         }
     }

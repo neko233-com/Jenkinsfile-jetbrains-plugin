@@ -68,7 +68,7 @@ public final class JenkinsfileFormattingTest extends BasePlatformTestCase {
 
     public void testNestedParametersAndStagesUseOneIndentPerBlock() {
         myFixture.configureByText(JenkinsfileFileType.INSTANCE,
-                "pipeline{parameters{choice(name:'CHANNEL',choices:['wechat','taptap'],description:'target'); string(name:'VERSION',defaultValue:'',description:'version')} stages{stage('Build'){steps{sh 'echo ok'}} stage('Deploy'){steps{sh 'echo done'}}}}}");
+                "pipeline{parameters{choice(name:'CHANNEL',choices:['wechat','taptap'],description:'target'); string(name:'VERSION',defaultValue:'',description:'version')} stages{stage('Build'){steps{sh 'echo ok'}} stage('Deploy'){steps{sh 'echo done'}}}}");
 
         format();
 
@@ -242,6 +242,17 @@ public final class JenkinsfileFormattingTest extends BasePlatformTestCase {
         String before = myFixture.getFile().getText();
         format();
         assertEquals(tokens(before), tokens(myFixture.getFile().getText()));
+        assertIdempotent();
+    }
+
+    public void testShellKeywordsAsArgumentsAreNotControlFlow() {
+        myFixture.configureByText(JenkinsfileFileType.INSTANCE,
+                "pipeline { stages { stage('X') { steps { sh 'echo done; echo if then'; sh 'if true; then echo done; fi' } } } }");
+        format();
+        String formatted = myFixture.getFile().getText();
+        assertTrue(formatted, formatted.contains("echo done\n"));
+        assertTrue(formatted, formatted.contains("echo if then\n"));
+        assertTrue(formatted, formatted.contains("sh 'if true; then echo done; fi'"));
         assertIdempotent();
     }
 

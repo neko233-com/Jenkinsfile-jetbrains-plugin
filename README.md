@@ -17,7 +17,7 @@ The plugin supplies its own Jenkinsfile language support, so GoLand does not nee
 
 ## VS Code
 
-The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. Version **1.0.0** is publicly available on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=neko233-com.jenkinsfile-free). Search for **Jenkinsfile Free** in the Extensions view or run `code --install-extension neko233-com.jenkinsfile-free`. Public search and an anonymous VSIX download were verified on **15 October 2026**; the downloaded package's SHA-256 matches the release VSIX. See [`vscode/README.md`](vscode/README.md) for features, limitations, offline installation, and build instructions.
+The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. Version **1.0.2**, including the classic Jenkins butler icon and the formatting improvements from 1.0.1, is publicly available on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=neko233-com.jenkinsfile-free). Search for **Jenkinsfile Free** in the Extensions view or run `code --install-extension neko233-com.jenkinsfile-free`. Public version history and an anonymous VSIX download were verified on **15 October 2026**; the downloaded package's SHA-256 matches the release VSIX. The packaged extension passed a VS Code 1.142.0 Extension Host check for activation, filename recognition, Format Document, five unchanged repeated passes, and format on save. See [`vscode/README.md`](vscode/README.md) for features, limitations, offline installation, and build instructions.
 
 Jenkins Pipeline DSL entries can vary by controller version, installed plugins, and shared libraries. The bundled completion list is a useful baseline; importing GDSL adds method and global names from a specific controller. The importer currently does not read method signatures or validate Jenkins-specific Pipeline rules. Use the target controller's Pipeline Syntax and linter for server-side validation.
 
@@ -43,6 +43,12 @@ Version **1.0.5**, submitted on **14 October 2026**, has been approved and is pu
 
 The Marketplace plugin ID is `35027`, the plugin XML ID is `com.neko233.jenkinsfile`, and the approved update ID is `1193696`. The plugin ID remains the same across the rename so existing installations can receive updates.
 
+### 1.0.6 update
+
+Version **1.0.6** adds the classic Jenkins butler icons and fixes indentation throughout nested blocks and multiline argument lists. Its GoLand 2026.2.1.1 platform tests pass (22 tests), and Plugin Verifier reports **Compatible** with `GO-262.9437.286`. The user-reported release fixture also matches its expected layout after formatting in the isolated GoLand instance. Marketplace submission and approval are tracked separately from these local checks.
+
+For installations still showing 1.0.1, an update may already have been downloaded and be waiting for an IDE restart. On 15 October, the local GoLand log confirmed 1.0.5 downloaded at 17:35 and loaded after restarting at 18:18. Marketplace TLS or HTTP errors can also prevent the update page and artwork from loading.
+
 ## Build from source
 
 Requirements: JDK 25 and the included Gradle Wrapper. By default the build downloads the GoLand 2026.2.1 SDK. To use a local JetBrains IDE installation:
@@ -53,8 +59,12 @@ Requirements: JDK 25 and the included Gradle Wrapper. By default the build downl
 
 The plugin archive is written to `build/distributions/`. Run `verifyPlugin` to check the plugin against the configured IDE.
 
+If Gradle launched by a packaged Windows application fails with `PipeImpl` / `UnixDomainSockets.connect0: Invalid argument`, use a workspace-local socket directory for that build process. Set `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=<absolute workspace path>/build/runtime-tmp` and create that directory before launching Gradle. This avoids the failing temporary socket path; no system security setting needs to change.
+
 ## Compatibility
 
 The plugin declares IntelliJ Platform build compatibility from 243 through 262.* (2024.3–2026.2) and depends only on the shared IntelliJ Platform module. Version 1.0.5 passes the local IntelliJ Plugin Verifier against the installed GoLand build `GO-262.9437.286`. Marketplace Plugin Verifier 1.410 reports **Compatible** for GoLand 2026.3 EAP build `263.6259.35` and IntelliJ IDEA 2026.2.3; the declared compatibility range remains 243 through 262.*.
 
 The plugin makes no network calls and does not upload source files. GDSL import reads a local file. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the bundled parser license.
+
+Jenkins butler artwork is by the [Jenkins project](https://www.jenkins.io/) and Frontside, under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Code remains MIT and is authored by **neko233-com**. This is an independent plugin, not an official Jenkins project product.

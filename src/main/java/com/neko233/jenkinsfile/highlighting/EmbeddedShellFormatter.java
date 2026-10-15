@@ -118,7 +118,8 @@ final class EmbeddedShellFormatter {
                 int end = i + 1;
                 while (end < body.length() && isWordPart(body.charAt(end))) end++;
                 String word = body.substring(i, end);
-                if (COMPLEX_SHELL_WORDS.contains(word) || word.equals("[[") || word.equals("]]")) return null;
+                if (COMPLEX_SHELL_WORDS.contains(word)
+                        && (current.toString().isBlank() || parentheses > 0)) return null;
                 current.append(word);
                 i = end;
                 continue;

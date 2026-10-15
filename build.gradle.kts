@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.neko233"
-version = "1.0.5"
+version = "1.0.6"
 
 repositories {
     mavenCentral()
@@ -31,6 +31,10 @@ dependencies {
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+
+tasks.processResources {
+    from("THIRD-PARTY-NOTICES.md") { into("META-INF") }
 }
 
 tasks.withType<JavaCompile>().configureEach {
