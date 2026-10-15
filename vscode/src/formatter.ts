@@ -3,6 +3,7 @@ import { Token, tokenize } from "./lexer.js";
 export interface FormatterOptions {
   readonly insertSpaces: boolean;
   readonly tabSize: number;
+  readonly printWidth?: number;
 }
 
 type GroupKind = "curly" | "paren" | "bracket";
@@ -26,7 +27,7 @@ const PIPELINE_SECTIONS = new Set([
   "agent", "environment", "options", "parameters", "post", "stages", "tools", "triggers"
 ]);
 const PIPELINE_BLOCKS = new Set(["pipeline"]);
-const STAGE_BLOCKS = new Set(["stage", "steps", "post", "when", "script", "parallel", "matrix", "environment", "options", "input"]);
+const STAGE_BLOCKS = new Set(["agent", "steps", "post", "when", "parallel", "matrix", "environment", "options", "input", "tools"]);
 const CONTROL_WORDS = new Set(["if", "for", "while", "switch", "catch", "synchronized"]);
 const SHELL_STEPS = new Map<string, "sh" | "cmd" | "powershell">([
   ["sh", "sh"], ["bat", "cmd"], ["cmd", "cmd"], ["powershell", "powershell"], ["pwsh", "powershell"]
@@ -35,14 +36,23 @@ const SHELL_STEPS = new Map<string, "sh" | "cmd" | "powershell">([
 export function formatJenkinsfile(source: string, options: FormatterOptions = { insertSpaces: true, tabSize: 4 }): string {
   if (source.length > 250_000) return source;
   const newline = source.includes("\r\n") ? "\r\n" : "\n";
-  const hasFinalNewline = /(?:\r\n|\n|\r)$/.test(source);
-  const parsed = parseGroups(tokenize(source));
+  const tokens = tokenize(source);
+  const stack: string[] = [];
+  for (const token of tokens) {
+    if (token.terminated === false) return source;
+    if (token.kind !== "punctuation") continue;
+    const open = openingKind(token.text);
+    if (open) stack.push(closingFor(open));
+    else if (isClosing(token.text) && stack.pop() !== token.text) return source;
+  }
+  if (stack.length > 0) return source;
+  const parsed = parseGroups(tokens);
   const safeTabSize = Math.max(1, Math.min(8, Math.trunc(options.tabSize) || 4));
-  const formatOptions = { ...options, tabSize: safeTabSize, newline };
+  const printWidth = Math.max(60, Math.min(200, Math.trunc(options.printWidth ?? 100) || 100));
+  const formatOptions = { ...options, tabSize: safeTabSize, printWidth, newline };
   let formatted = formatBlock(parsed, 0, "", formatOptions);
-  formatted = formatted.replace(/^\n+|\n+$/g, "");
-  if (hasFinalNewline && formatted) formatted += newline;
-  return formatted;
+  formatted = formatted.replace(/^(?:\r?\n)+|(?:\r?\n)+$/g, "");
+  return formatted ? formatted + newline : "";
 }
 
 function parseGroups(tokens: readonly Token[]): Node[] {
@@ -138,11 +148,16 @@ function parseOneGroup(tokens: readonly Token[], index: number, kind: GroupKind)
 function formatBlock(nodes: readonly Node[], level: number, owner: string, options: FormatterOptions & { newline: string }): string {
   const statements = collectStatements(nodes, owner);
   const lines: string[] = [];
+  let previousMultiline = false;
 
   for (const statement of statements) {
-    if (statement.blankBefore && lines.length > 0 && lines.at(-1) !== "") lines.push("");
     const rendered = renderStatement(statement.nodes, level, options);
-    if (rendered) lines.push(indent(level, options) + rendered);
+    if (!rendered) continue;
+    const multiline = rendered.includes("\n");
+    if ((statement.blankBefore || (owner === "parameters" && (previousMultiline || multiline)))
+      && lines.length > 0 && lines.at(-1) !== "") lines.push("");
+    lines.push(indent(level, options) + rendered);
+    previousMultiline = multiline;
   }
   return lines.join(options.newline);
 }
@@ -155,7 +170,7 @@ function collectStatements(nodes: readonly Node[], owner: string): Statement[] {
   const flush = (): void => {
     const meaningful = trimSemicolonOnly(current);
     if (meaningful.length > 0) {
-      statements.push({ nodes: current, blankBefore: pendingBlank });
+      statements.push({ nodes: meaningful, blankBefore: pendingBlank });
       pendingBlank = false;
     }
     current = [];
@@ -172,13 +187,19 @@ function collectStatements(nodes: readonly Node[], owner: string): Statement[] {
     }
 
     if (isToken(node) && node.text === ";") {
-      current.push(node);
-      flush();
+      const first = current[0];
+      if (current.length === 2 && isToken(first) && ["if", "for", "while"].includes(first.text)
+        && isGroup(current[1]) && current[1].groupKind === "paren") current.push(node);
+      // A trailing comment belongs to this statement, not to the following line.
+      const next = nodes[index + 1];
+      if (!(isToken(next) && next.kind === "line-comment" && !next.lineBreakBefore)) flush();
       continue;
     }
 
     current.push(node);
-    if (isGroup(node) && node.groupKind === "curly" && !isChainContinuation(nodes[index + 1])) flush();
+    const next = nodes[index + 1];
+    if (isGroup(node) && node.groupKind === "curly" && !isChainContinuation(next)
+      && !(isToken(next) && next.kind === "line-comment" && !next.lineBreakBefore)) flush();
     if (isToken(node) && node.kind === "line-comment") flush();
   }
   flush();
@@ -190,11 +211,13 @@ function semanticBoundaryKind(node: Node, owner: string): false | "line" | "blan
   const word = node.text.toLowerCase();
   if (PIPELINE_BLOCKS.has(owner.toLowerCase()) && PIPELINE_SECTIONS.has(word)) return "blank";
   if ((owner.toLowerCase() === "stages" || owner.toLowerCase() === "parallel") && word === "stage") return "blank";
+  if (owner.toLowerCase() === "stage" && STAGE_BLOCKS.has(word)) return "blank";
   return false;
 }
 
 function isContinuation(previous: Node, current: Node): boolean {
-  if (isToken(previous) && previous.kind === "operator") return true;
+  if (isChainContinuation(current)) return true;
+  if (isToken(previous) && previous.kind === "operator" && !["++", "--"].includes(previous.text)) return true;
   if (isToken(previous) && [",", "."].includes(previous.text)) return true;
   if (isToken(current) && current.kind === "operator" && !["++", "--"].includes(current.text)) return true;
   if (isGroup(previous) && previous.groupKind === "paren" && isToken(current) && current.text === ".") return true;
@@ -246,7 +269,7 @@ function renderCurly(group: GroupNode, level: number, owner: string, options: Fo
   return `{${options.newline}${body}${close}`;
 }
 
-function renderInline(nodes: readonly Node[], level: number, options: FormatterOptions & { newline: string }): string {
+function renderInline(nodes: readonly Node[], level: number, options: FormatterOptions & { newline: string }, shellMode?: "sh" | "cmd" | "powershell"): string {
   let result = "";
   let previous: Node | undefined;
   let beforePrevious: Node | undefined;
@@ -264,7 +287,9 @@ function renderInline(nodes: readonly Node[], level: number, options: FormatterO
     const previousWord = previous ? lastWord([previous]) : "";
     const next = isGroup(node)
       ? renderGroup(node, level, previousWord, options)
-      : renderLiteral(node, previous, nodes[index + 1], level, options);
+      : renderLiteral(node, previous, nodes[index + 1], level, options,
+        shellMode && (!previous || (isToken(previous) && previous.text === ":"
+          && isToken(beforePrevious) && beforePrevious.text === "script")) ? shellMode : undefined);
     const separator = previous ? spacingBetween(previous, node, beforePrevious) : "";
     result += separator + next;
     beforePrevious = previous;
@@ -278,18 +303,40 @@ function renderGroup(group: GroupNode, level: number, previousWord: string, opti
   const close = group.close?.text ?? "";
   const open = group.open.text;
   const items = splitArguments(group.children);
-  const sourceWidth = group.open.end - group.open.start + group.children.reduce((total, node) => total + nodeWidth(node), 0);
+  const shellMode = SHELL_STEPS.get(previousWord.toLowerCase());
+  const inline = renderInline(group.children, level, options, shellMode);
   const namedArguments = items.filter((item) => containsNamedArgument(item)).length;
-  const multiline = items.length > 1 && (namedArguments >= 3 || sourceWidth > 100);
-  if (!multiline) return `${open}${renderInline(group.children, level, options)}${close}`;
+  const hasComments = group.children.some((node) => isToken(node) && node.kind === "line-comment");
+  const multiline = hasComments || inline.includes("\n") || (items.length > 1
+    && ((group.groupKind === "paren" && namedArguments >= 3)
+      || indent(level, options).length + previousWord.length + inline.length + 2 > (options.printWidth ?? 100)));
+  if (!multiline) return `${open}${inline}${close}`;
 
-  const body = items.map((item) => renderInline(item, level + 1, options)).join(`,${options.newline}${indent(level + 1, options)}`);
+  const body = items.map((item, index) => renderArgument(item, level + 1, index < items.length - 1, options, shellMode))
+    .join(`${options.newline}${indent(level + 1, options)}`);
   return `${open}${options.newline}${indent(level + 1, options)}${body}${options.newline}${indent(level, options)}${close}`;
 }
 
-function renderLiteral(token: Token, previous: Node | undefined, next: Node | undefined, level: number, options: FormatterOptions & { newline: string }): string {
-  if (token.kind !== "string" || !previous || !isToken(previous) || previous.kind !== "word") return token.text;
-  const mode = SHELL_STEPS.get(previous.text.toLowerCase());
+function renderArgument(nodes: readonly Node[], level: number, comma: boolean, options: FormatterOptions & { newline: string }, shellMode?: "sh" | "cmd" | "powershell"): string {
+  const remaining = [...nodes];
+  const leading: string[] = [];
+  while (true) {
+    const first = remaining[0];
+    if (!isToken(first) || first.kind !== "line-comment") break;
+    leading.push(first.text.trimEnd());
+    remaining.shift();
+  }
+  const trailing = remaining.at(-1);
+  const comment = isToken(trailing) && trailing.kind === "line-comment" ? trailing.text.trimEnd() : "";
+  if (comment) remaining.pop();
+  const content = renderInline(remaining, level, options, shellMode);
+  return [...leading, content + (comma ? "," : "") + (comment ? ` ${comment}` : "")]
+    .join(options.newline + indent(level, options));
+}
+
+function renderLiteral(token: Token, previous: Node | undefined, next: Node | undefined, level: number, options: FormatterOptions & { newline: string }, explicitMode?: "sh" | "cmd" | "powershell"): string {
+  if (token.kind !== "string") return token.text;
+  const mode = explicitMode ?? (isToken(previous) && previous.kind === "word" ? SHELL_STEPS.get(previous.text.toLowerCase()) : undefined);
   return mode && isStandaloneShellLiteral(next)
     ? formatShellLiteral(token.text, mode, level, options) ?? token.text
     : token.text;
@@ -308,11 +355,21 @@ function spacingBetween(previous: Node, current: Node, beforePrevious?: Node): s
   const right = nodeText(current);
   if (right === "," || right === ";" || right === "." || right === ":") return "";
   if (left === "." || left === "@") return "";
+  if (["?.", "*.", ".&", "::", "..", "..<"].includes(left) || ["?.", "*.", ".&", "::", "..", "..<"].includes(right)) return "";
+  if (["++", "--"].includes(right)) return "";
+  if (["++", "--"].includes(left)) return isToken(current) && current.kind === "operator" ? " " : "";
   if (left === "," || left === ";" || left === ":") return " ";
 
   if (isGroup(current)) {
-    if (current.groupKind === "paren") return isToken(previous) && CONTROL_WORDS.has(previous.text) ? " " : "";
-    if (current.groupKind === "bracket") return isToken(previous) || isGroup(previous) ? "" : " ";
+    if (current.groupKind === "paren") {
+      if (isToken(previous) && (CONTROL_WORDS.has(previous.text) || ["return", "throw", "assert"].includes(previous.text))) return " ";
+      if (isToken(previous) && previous.kind === "operator") return isPrefixOperator(previous.text, beforePrevious) ? "" : " ";
+      return "";
+    }
+    if (current.groupKind === "bracket") {
+      if (isToken(previous) && (previous.kind === "operator" || ["return", "throw", "in", "case", "assert"].includes(previous.text))) return " ";
+      return "";
+    }
     return " ";
   }
   if (isGroup(previous)) {
@@ -338,6 +395,8 @@ function splitArguments(nodes: readonly Node[]): Node[][] {
   const result: Node[][] = [[]];
   for (const node of nodes) {
     if (isToken(node) && node.text === ",") result.push([]);
+    else if (isToken(node) && node.kind === "line-comment" && !node.lineBreakBefore
+      && result.length > 1 && result.at(-1)!.length === 0) result[result.length - 2]!.push(node);
     else result.at(-1)!.push(node);
   }
   return result.filter((item) => item.length > 0);
@@ -424,7 +483,7 @@ function formatShellLiteral(literal: string, mode: "sh" | "cmd" | "powershell", 
   const deeperIndent = indent(level + 2, options);
   const formatted: string[] = [];
   for (const entry of commands) {
-    const wrapped = wrapCommand(entry.command, mode, bodyIndent, deeperIndent);
+    const wrapped = wrapCommand(entry.command, mode, bodyIndent, deeperIndent, options.printWidth ?? 100);
     if (!wrapped) return undefined;
     const last = wrapped.length - 1;
     wrapped[last] += entry.operator ? ` ${entry.operator} ${continuationMarker(mode)}` : "";
@@ -432,6 +491,8 @@ function formatShellLiteral(literal: string, mode: "sh" | "cmd" | "powershell", 
   }
 
   if (formatted.length === 0) return undefined;
+  if (delimiter.length === 1 && formatted.length === 1
+    && indent(level, options).length + literal.length + 12 <= (options.printWidth ?? 100)) return literal;
   const triple = quote.repeat(3);
   return `${triple}${options.newline}${bodyIndent}${formatted.join(`${options.newline}${bodyIndent}`)}${options.newline}${indent(level, options)}${triple}`;
 }
@@ -525,22 +586,23 @@ function splitLogicalLine(line: string, mode: "sh" | "cmd" | "powershell"): Scri
   return commands.length ? commands : undefined;
 }
 
-function wrapCommand(command: string, mode: "sh" | "cmd" | "powershell", bodyIndent: string, deeperIndent: string): string[] | undefined {
-  if (command.length <= 100) return [command];
+function wrapCommand(command: string, mode: "sh" | "cmd" | "powershell", bodyIndent: string, deeperIndent: string, printWidth: number): string[] | undefined {
+  const width = Math.max(30, printWidth - deeperIndent.length - 3);
+  if (bodyIndent.length + command.length <= printWidth) return [command];
   if (command.includes("#")) return [command];
   const boundaries = findWordBoundaries(command);
   if (boundaries.length === 0) return [command];
   const lines: string[] = [];
   const continuationIndent = deeperIndent.slice(bodyIndent.length);
   const namedOptions = boundaries.filter((offset) => command.startsWith("--", offset + 1));
-  const wrapEachOption = command.length > 100 && namedOptions.length > 1;
+  const wrapEachOption = namedOptions.length > 1;
   let start = 0;
-  while (command.length - start > 100 || (wrapEachOption && namedOptions.some((offset) => offset > start))) {
-    const limit = start + 100;
+  while (command.length - start > width || (wrapEachOption && namedOptions.some((offset) => offset > start))) {
+    const limit = start + width;
     const candidates = boundaries.filter((offset) => offset > start && offset <= limit);
     const nextOption = boundaries.find((offset) => offset > start && command.startsWith("--", offset + 1));
     const split = wrapEachOption && nextOption !== undefined
-      ? nextOption
+      ? nextOption <= limit ? nextOption : candidates.at(-1) ?? nextOption
       : nextOption !== undefined && nextOption <= limit ? nextOption : candidates.at(-1);
     if (split === undefined) return [command];
     const line = command.slice(start, split).trimEnd();

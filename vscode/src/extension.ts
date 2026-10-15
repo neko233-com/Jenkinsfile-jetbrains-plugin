@@ -13,7 +13,10 @@ export function activate(context: vscode.ExtensionContext): void {
     provideDocumentFormattingEdits(document, options) {
       if (!isJenkinsfileDocument(document)) return [];
       const current = document.getText();
-      const formatted = formatJenkinsfile(current, { insertSpaces: options.insertSpaces, tabSize: options.tabSize });
+      const formatted = formatJenkinsfile(current, {
+        insertSpaces: options.insertSpaces, tabSize: options.tabSize,
+        printWidth: vscode.workspace.getConfiguration("jenkinsfileFree", document).get<number>("format.printWidth", 100)
+      });
       if (formatted === current) return [];
       return [vscode.TextEdit.replace(new vscode.Range(document.positionAt(0), document.positionAt(current.length)), formatted)];
     }
@@ -39,7 +42,8 @@ export function activate(context: vscode.ExtensionContext): void {
       const current = editor.document.getText();
       const formatted = formatJenkinsfile(current, {
         insertSpaces: editor.options.insertSpaces !== false,
-        tabSize: typeof editor.options.tabSize === "number" ? editor.options.tabSize : 4
+        tabSize: typeof editor.options.tabSize === "number" ? editor.options.tabSize : 4,
+        printWidth: vscode.workspace.getConfiguration("jenkinsfileFree", editor.document).get<number>("format.printWidth", 100)
       });
       if (formatted === current) return;
       const edit = new vscode.WorkspaceEdit();
