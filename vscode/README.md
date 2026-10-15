@@ -42,13 +42,19 @@ pipeline {
 
 ## Install
 
-Once the Marketplace listing is public, search for **Jenkinsfile Free** in the VS Code Extensions view. To install a downloaded VSIX, run:
+Version **1.0.0** is available for free on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=neko233-com.jenkinsfile-free), published by **neko233-com**. Search for **Jenkinsfile Free** in the VS Code Extensions view, or run:
+
+```powershell
+code --install-extension neko233-com.jenkinsfile-free
+```
+
+Public Marketplace search, the Free label, and an anonymous download of version 1.0.0 were verified on **15 October 2026**. The downloaded VSIX matches the release package's SHA-256.
+
+For offline installation, download the VSIX from the [GitHub release](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/vscode-v1.0.0), then run:
 
 ```powershell
 code --install-extension .\jenkinsfile-free-1.0.0.vsix
 ```
-
-The signed-in Marketplace publisher is not available yet. Until it is, the packaged VSIX can be downloaded from the [GitHub release](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/vscode-v1.0.0) and installed with the command above.
 
 ## Build and verify
 

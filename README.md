@@ -17,7 +17,7 @@ The plugin supplies its own Jenkinsfile language support, so GoLand does not nee
 
 ## VS Code
 
-The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. It provides Jenkinsfile highlighting, common completions, an Outline view, structural diagnostics, and repeatable formatting. [Download the VSIX](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/vscode-v1.0.0) or see [`vscode/README.md`](vscode/README.md) for features, limitations, and build instructions. The VS Code Marketplace listing still requires its publisher account to sign in and publish the VSIX.
+The repository also contains a free VS Code extension under the same **Jenkinsfile Free** name and `neko233-com` authorship. Version **1.0.0** is publicly available on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=neko233-com.jenkinsfile-free). Search for **Jenkinsfile Free** in the Extensions view or run `code --install-extension neko233-com.jenkinsfile-free`. Public search and an anonymous VSIX download were verified on **15 October 2026**; the downloaded package's SHA-256 matches the release VSIX. See [`vscode/README.md`](vscode/README.md) for features, limitations, offline installation, and build instructions.
 
 Jenkins Pipeline DSL entries can vary by controller version, installed plugins, and shared libraries. The bundled completion list is a useful baseline; importing GDSL adds method and global names from a specific controller. The importer currently does not read method signatures or validate Jenkins-specific Pipeline rules. Use the target controller's Pipeline Syntax and linter for server-side validation.
 
@@ -39,9 +39,9 @@ The plugin and its source are free. JetBrains IDE licensing is separate.
 
 Marketplace listing: [Jenkinsfile Free](https://plugins.jetbrains.com/plugin/35027-jenkinsfile-free).
 
-Version **1.0.5** was submitted on **14 October 2026** on the Stable channel with public visibility (the Hidden flag is off). JetBrains accepted the upload and reported no problems so far; the Support team's additional checks are pending, and the submission status is **Under review**. The listing will become publicly available and searchable after JetBrains approves it; submission alone does not mean approval. Until then, use the GitHub release ZIP above.
+Version **1.0.5**, submitted on **14 October 2026**, has been approved and is publicly available on the Stable channel. Search for **Jenkinsfile Free** in the IDE's Marketplace tab or open the listing above. The listing is free, supports GoLand and IntelliJ-based IDEs, and provides public version downloads.
 
-The Marketplace plugin ID is `35027`, the plugin XML ID is `com.neko233.jenkinsfile`, and the submitted update ID is `1193696`. The plugin ID remains the same across the rename so existing installations can receive updates.
+The Marketplace plugin ID is `35027`, the plugin XML ID is `com.neko233.jenkinsfile`, and the approved update ID is `1193696`. The plugin ID remains the same across the rename so existing installations can receive updates.
 
 ## Build from source
 
