@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Use the classic Jenkins butler artwork for the extension and Jenkinsfile file icons, in both light and dark themes.
+- Include the Jenkins project / Frontside attribution and CC BY-SA 3.0 artwork license notice.
+- Retain the formatting improvements and idempotence fixes from 1.0.1.
+
 ## 1.0.1
 
 - Add the JF extension icon and light/dark Jenkinsfile file icons, with immediate filename recognition before activation.

@@ -50,10 +50,10 @@ code --install-extension neko233-com.jenkinsfile-free
 
 Requires VS Code **1.90.0** or newer. The extension works locally and has no paid service requirement.
 
-For offline installation, download the VSIX from the [GitHub release](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/vscode-v1.0.1), then run:
+For offline installation, download the VSIX from the [GitHub release](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/vscode-v1.0.2), then run:
 
 ```powershell
-code --install-extension .\jenkinsfile-free-1.0.1.vsix
+code --install-extension .\jenkinsfile-free-1.0.2.vsix
 ```
 
 ## Formatting style
@@ -62,7 +62,7 @@ The formatter uses one indentation level per block, one blank line between Pipel
 
 `jenkinsfileFree.format.printWidth` sets the preferred line width (default **100**, range **60–200**). Long string literals remain intact even when they exceed this width. The formatter respects the editor's indentation and line endings and writes exactly one final newline. See the [complete release example](examples/Jenkinsfile.release).
 
-The extension includes a JF icon for the Extensions view and a file icon for Jenkinsfile documents. File icon themes may override the contributed file icon.
+The extension and Jenkinsfile documents use the classic [Jenkins project](https://www.jenkins.io/) butler artwork, originally created by Frontside and distributed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). File icon themes may override the contributed file icon. This is an independent extension by **neko233-com**; it is not an official Jenkins project product.
 
 ## Build and verify
 
@@ -79,4 +79,4 @@ The distributable `.vsix` is written to this directory. Publishing requires the 
 
 ## License and authorship
 
-MIT. Author and publisher: [neko233-com](https://github.com/neko233-com).
+Code: MIT. Author and publisher: [neko233-com](https://github.com/neko233-com). Jenkins artwork: CC BY-SA 3.0; see [third-party notices](THIRD-PARTY-NOTICES.md).

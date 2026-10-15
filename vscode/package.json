@@ -2,7 +2,7 @@
   "name": "jenkinsfile-free",
   "displayName": "Jenkinsfile Free",
   "description": "Free Jenkinsfile syntax highlighting, completion, outline and idempotent formatting.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "icon": "images/icon.png",
   "pricing": "Free",
   "publisher": "neko233-com",
