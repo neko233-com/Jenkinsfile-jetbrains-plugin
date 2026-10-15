@@ -45,7 +45,7 @@ The Marketplace plugin ID is `35027`, the plugin XML ID is `com.neko233.jenkinsf
 
 ### 1.0.6 update
 
-Version **1.0.6** adds the classic Jenkins butler icons and fixes indentation throughout nested blocks and multiline argument lists. Its GoLand 2026.2.1.1 platform tests pass (22 tests), and Plugin Verifier reports **Compatible** with `GO-262.9437.286`. The user-reported release fixture also matches its expected layout after formatting in the isolated GoLand instance. Marketplace submission and approval are tracked separately from these local checks.
+Version **1.0.6** adds the classic Jenkins butler icons and fixes indentation throughout nested blocks and multiline argument lists. Its GoLand 2026.2.1.1 platform tests pass (22 tests), and Plugin Verifier reports **Compatible** with `GO-262.9437.286`. The user-reported release fixture also matches its expected layout after formatting in the isolated GoLand instance. It was submitted to the Stable channel on **15 October 2026**, update ID **1194586**, with Hidden disabled; its current Marketplace status is **Under review**. The [GitHub release](https://github.com/neko233-com/Jenkinsfile-jetbrains-plugin/releases/tag/v1.0.6) provides an immediately downloadable ZIP. Marketplace approval remains separate from these local checks.
 
 For installations still showing 1.0.1, an update may already have been downloaded and be waiting for an IDE restart. On 15 October, the local GoLand log confirmed 1.0.5 downloaded at 17:35 and loaded after restarting at 18:18. Marketplace TLS or HTTP errors can also prevent the update page and artwork from loading.
 
